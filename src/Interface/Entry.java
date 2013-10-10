@@ -19,6 +19,13 @@ public class Entry{
 		}
 	}
 
+	public Entry(String s_name, String u_name, String iv, String pass){
+		sName = s_name;
+		uName = u_name;
+		IV = iv;
+		pw = pass;
+	}
+
 	public void setServiceName(String s_name){
 		sName = s_name;
 	}
