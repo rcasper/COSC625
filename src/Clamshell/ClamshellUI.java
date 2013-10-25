@@ -11,7 +11,7 @@ import java.util.ArrayList;
  */
 public class ClamshellUI extends javax.swing.JFrame {
     private int selectedRow = 0;
-    private Zaes aes;
+   //private Zaes aes;
     public ArrayList<String> table; // must specify String type object
     
     /**
@@ -20,7 +20,7 @@ public class ClamshellUI extends javax.swing.JFrame {
     public ClamshellUI() {
         initComponents();
         table = new ArrayList();
-        aes = new Zaes();
+        //aes = new Yaes();
     }
     
     @SuppressWarnings("unchecked")
@@ -55,13 +55,18 @@ public class ClamshellUI extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        jTextPane2.setEditable(false);
+        jTextPane2.setEnabled(false);
         jScrollPane2.setViewportView(jTextPane2);
 
         sname.setToolTipText("Enter Service Name");
+        sname.setEnabled(false);
 
         uname.setToolTipText("Enter User Name");
+        uname.setEnabled(false);
 
         pass.setToolTipText("Enter Password");
+        pass.setEnabled(false);
 
         openButton.setText("Open");
         openButton.setToolTipText("");
@@ -72,9 +77,12 @@ public class ClamshellUI extends javax.swing.JFrame {
             }
         });
 
+        passwordTextField.setEnabled(false);
+
         passwordLabel.setText("Password");
 
         addButton.setText("Add Entry");
+        addButton.setEnabled(false);
         addButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 addButtonActionPerformed(evt);
@@ -90,6 +98,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         unameLabel.setText("User Name");
 
         deleteButton.setText("Delete Entry");
+        deleteButton.setEnabled(false);
         deleteButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 deleteButtonActionPerformed(evt);
@@ -97,6 +106,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         });
 
         deleteRowField.setToolTipText("Enter the row you wish to delete.");
+        deleteRowField.setEnabled(false);
         deleteRowField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 deleteRowFieldActionPerformed(evt);
@@ -160,6 +170,13 @@ public class ClamshellUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void enableUIFields()
+    {
+        sname.setEnabled(true);
+        
+        
+    }
+    
     private boolean validatePassword()
     {
         try {
@@ -177,7 +194,8 @@ public class ClamshellUI extends javax.swing.JFrame {
                 if (key32.length() == 32 && key64.length() == 32 && initVector.length() == 32){
                     // convert password from jTextField4.getText() to bytes and hex
                     String keyIV = key32 + key64 + initVector;
-                    return aes.validatePassword(password, keyIV);
+                    //return aes.validatePassword(password, keyIV);
+                    return true;
                 }
                 else
                 {
@@ -211,7 +229,7 @@ public class ClamshellUI extends javax.swing.JFrame {
                 
                 if (validatePassword())
                 {
-                       table = aes.decryptFile(f);
+                       //table = aes.decryptFile(f);
                 }
                 else
                 {
