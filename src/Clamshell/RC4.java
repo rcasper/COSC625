@@ -26,7 +26,7 @@ public class RC4 {
         }
         keyStr = keyStr.trim();
         key = s2ia(keyStr);
-        print("key: ", key);
+        //print("key: ", key);
         int[][] plainBin = new int[pstr.length()/2][8];
         plain = new int[pstr.length()/2];
         int ctr = 0;
