@@ -1,32 +1,105 @@
 package Clamshell;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.File;
+import java.io.*;
 import javax.swing.*;
 import java.util.ArrayList;
-
+/**
+ * Main UI for secure password management application
+ * COSC 625 Fall 2013
+ * @author Andrew Ramsey
+ * @version 1.5
+ */
 public class ClamshellUI extends javax.swing.JFrame {
     
     private ArrayList<Entry> passList; // must specify Entry type object
-    private int selectedRow = 0; // row to delete
+    private String writeHelper = "";
+    
+    // default designations for delimeters and padding
+    private final String delimeter = "   "; // entry data delimeter
+    private final String newline = "\r\n"; // new line delimeter for DOS/Windows but also will work for UNIX
+    private final String pad = "0";
     
     // the values passed in from initial UI window (authentication procedure)
     private File authFile;
     private String userName;
+    private String masterPass;
+    private boolean isAuthenticated = false;
+    
+    /**
+     * Beginning insertion point of program
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        
+        ClamshellUI clam = new ClamshellUI();
+        clam.setLocationRelativeTo(null); // center window in middle of screen
+        
+        if (clam.isAuthenticated == true)
+        {
+            clam.setVisible(true);
+        } else { System.exit(0); }
+    }
     
     /**
      * UI constructor
+     * Provides authentication and loads entry objects
+     * Then create ClamshellUI and etc...
      */
     public ClamshellUI() {
         initComponents();
         passList = new ArrayList();
+        // Now authenticate the user before continuing ClamshellUI
+        AuthenticateDialog dialog = new AuthenticateDialog(new javax.swing.JFrame(), true);
+        dialog.setLocationRelativeTo(null);// center the auth dialog window in middle of screen
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                System.exit(0);
+            }
+        });
+        dialog.setVisible(true);
+        // if authenticated, continue
+        if (dialog.getAuthenticated() == true) { // ensure user is validated before continuing
+            // make sure we pass the relevant information user provided
+            //  to new UI screen before disposing of old UI screen
+            authFile = dialog.getAuthFile();
+            userName = dialog.getUsername();
+            masterPass = dialog.getMasterPass();
+            isAuthenticated = dialog.getAuthenticated();
+            dialog.dispose(); // we are done authenticating
+            
+            if (authFile == null) // we are opening existing user's password file
+            {
+                String encryptedFileName = RC4Cipher(userName, masterPass);
+                String bigSky = "";
+                try { // read the raw data, then decrypt using RC4 and master password
+                    BufferedReader reader = new BufferedReader(new FileReader(encryptedFileName));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        bigSky += line;
+                    }
+                } catch (Exception e) {
+                    System.exit(5);
+                }                
+                bigSky = RC4Cipher(bigSky, masterPass); // decrypt raw data from password file
+                String[] rawEntries = bigSky.split('['+delimeter+']' + '['+newline+']'); //split on delimeter and newline symbols
+                
+                for (int i = 0; i < rawEntries.length; i += 4){
+                    // sname, uname, IV, pass
+                    passList.add(new Entry(rawEntries[i], rawEntries[i+1], rawEntries[i+2], rawEntries[i+3]));
+                }
+                deleteButton.setEnabled(true);
+            } else // we are creating a new file - none yet exists
+            {
+                // new file, therefore nothing to do here
+                // user enters data automatically populated to file
+            }
+        }// otherwise, deny access - shutdown program
+        else {System.exit(0);}     
     }
     
-    /*
-     * Auto-Generated Code from Java Swing GUI builder
-     */
+    // initComponents() below: *******************************************************************************************************************************************************
+    //Auto-Generated Code from Java Swing GUI builder 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -39,7 +112,6 @@ public class ClamshellUI extends javax.swing.JFrame {
         pass = new javax.swing.JTextField();
         addButton = new javax.swing.JButton();
         deleteButton = new javax.swing.JButton();
-        deleteRowField = new javax.swing.JTextField();
 
         javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
         jDialog1.getContentPane().setLayout(jDialog1Layout);
@@ -53,12 +125,18 @@ public class ClamshellUI extends javax.swing.JFrame {
         );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setAlwaysOnTop(true);
+        setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        setIconImages(null);
         setMinimumSize(new java.awt.Dimension(554, 255));
         setName("clamshell"); // NOI18N
 
         jTextPane2.setEditable(false);
+        jTextPane2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jTextPane2.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
         jTextPane2.setDoubleBuffered(true);
         jTextPane2.setMaximumSize(new java.awt.Dimension(1280, 1280));
+        jTextPane2.setName(""); // NOI18N
         jScrollPane2.setViewportView(jTextPane2);
 
         sname.setToolTipText("Enter Service Name");
@@ -69,6 +147,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         pass.setToolTipText("Enter Password");
 
         addButton.setText("Add Entry");
+        addButton.setToolTipText("Add Entry to Password List");
         addButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 addButtonActionPerformed(evt);
@@ -76,16 +155,11 @@ public class ClamshellUI extends javax.swing.JFrame {
         });
 
         deleteButton.setText("Delete Entry");
+        deleteButton.setToolTipText("Delete Entry from Password List");
+        deleteButton.setEnabled(false);
         deleteButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 deleteButtonActionPerformed(evt);
-            }
-        });
-
-        deleteRowField.setToolTipText("Enter the row you wish to delete.");
-        deleteRowField.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                deleteRowFieldKeyTyped(evt);
             }
         });
 
@@ -105,12 +179,8 @@ public class ClamshellUI extends javax.swing.JFrame {
                         .addComponent(pass, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(addButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(deleteRowField, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(deleteButton)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 40, Short.MAX_VALUE)
+                        .addComponent(deleteButton, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -121,11 +191,9 @@ public class ClamshellUI extends javax.swing.JFrame {
                     .addComponent(uname, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(pass, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(addButton)
-                    .addComponent(deleteRowField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(deleteButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 218, Short.MAX_VALUE))
         );
 
         pack();
@@ -136,40 +204,73 @@ public class ClamshellUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
-       //String userNameTest = JOptionPane.showInputDialog(null, "Enter User Name", "User Name", JOptionPane.QUESTION_MESSAGE);
-        
+       
        if (!passList.isEmpty())
        {   
-           //jButton4.setEnabled(true);
             try{
                 int entryNumber = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter Entry Number:", "Delete Entry?", JOptionPane.QUESTION_MESSAGE));
-                passList.remove((int)selectedRow);
+                
+                if (entryNumber >= 0 && entryNumber < passList.size())
+                {
+                    passList.remove((int)entryNumber);
+                }
+                else
+                {
+                    JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
             catch(Exception e){
                 JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
             }
+            if (passList.isEmpty()) // ensure turn off button for case user deleted last entry and there are no entries left
+            {
+                deleteButton.setEnabled(false);
+            }
+            else
+            {
+                deleteButton.setEnabled(true);
+            }
             updateTextArea();
+            updatePasswordFile();
        }
        else
        {
            deleteButton.setEnabled(false);
        }
-       
     }//GEN-LAST:event_deleteButtonActionPerformed
     
     /**
      * Update the text area field when passList is updated
      */
-    private void updateTextArea()
-    {
+    private void updateTextArea() {
         String bigSky = "";
-            for (int i = 0; i < passList.size(); ++i)
-            {
-                bigSky += i + " " + passList.get(i).getServiceName()+ " " + passList.get(i).getUserName()+ " " + passList.get(i).getPassword();
-            }
-
-            jTextPane2.setText(bigSky); // delete entry from flexible object type (arraylist)
-            jTextPane2.updateUI(); // update jTextField2 (text area)
+        String bigSky2 = "";
+        for (int i = 0; i < passList.size(); ++i) {
+            bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
+            // sname, uname, IV, pass
+            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
+        }
+        jTextPane2.setText(bigSky); // delete entry from flexible object type (arraylist)
+        jTextPane2.updateUI(); // update jTextField2 (text area)
+        writeHelper = bigSky2; // for writing to File
+    }
+    
+    /**
+     * Write RC4-encrypted entry data to file
+     */
+    private void updatePasswordFile() {
+        // I wrote the code this way to be more "Java-like" in convention
+        if (authFile == null) { // authFile.exists()
+            //String encryptedFileName = RC4Cipher(userName, masterPass);
+            authFile = new File(RC4Cipher(userName, masterPass));
+        }
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(authFile));
+            writer.write(RC4Cipher(writeHelper, masterPass));
+            writer.close();
+        } catch (Exception e) {
+            System.exit(10);
+        }
     }
     
     /**
@@ -179,101 +280,103 @@ public class ClamshellUI extends javax.swing.JFrame {
      */
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
         
-        if (passList.size() > 0)
-        {
-            deleteButton.setEnabled(true); // now we can delete entries
-        }
-        String newEntry = sname.getText() + " " + uname.getText() + " " + pass.getText() + "\n";
         passList.add(new Entry(sname.getText(), uname.getText(), pass.getText()));
-        
-        String bigSky = "";
-        for (int i = 0; i < passList.size(); ++i)
+        sname.setText("");
+        uname.setText("");
+        pass.setText("");
+        if (!passList.isEmpty())
         {
-            bigSky += i + " " + newEntry;
+            deleteButton.setEnabled(true);
         }
-        jTextPane2.setText(bigSky);
-        jTextPane2.updateUI();
-        //jTextField6.setText("" + passList.size());
+        else
+        {
+            deleteButton.setEnabled(false); // now we can delete entries
+        }
+        updateTextArea();
+        updatePasswordFile();
     }//GEN-LAST:event_addButtonActionPerformed
-
         
     /**
-     * When row for deletion is manually set via text editing - updates selectedRow variable
-     * @param evt 
+     * Convert user name input to RC4-encrypted string
+     * @return 
      */
-    private void deleteRowFieldKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_deleteRowFieldKeyTyped
-        selectedRow = Integer.parseInt(deleteRowField.getText()); // update the handler variable
-    }//GEN-LAST:event_deleteRowFieldKeyTyped
+    private String RC4Cipher(String u, String p)
+    {
+        RC4 rc = new RC4();
+        return rc.cipher(byteArrayToHexString(u.getBytes()), byteArrayToHexString(p.getBytes()));
+    }
+    
+    private String decryptAES(String plain, String k, String iv)
+    {
+        
+        return null;
+    }
     
     /**
-     * Beginning insertion point of program
-     * @param args the command line arguments
+     * Encrypt using AES 256
+     * @param plain - plaintext
+     * @param k - key
+     * @param iv - initialization vector
+     * @return String - encrypted text
      */
-    public static void main(String args[]) {
-        
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
+    private String encryptAES(String plain, String k, String iv)
+    {
+        // convert to hexadecimal
+        String plaintext = byteArrayToHexString(plain.getBytes());
+        String key = byteArrayToHexString(k.getBytes());
+        // init vector already in hexadecimal - no need to convert
+        Yaes aes = new Yaes(key);
+        String encryptedPass = "";
+        // ensure key length to 64 chars hex
+        // IV length is already set to 32 chars hex by Entry object
+        if (key.length() < 64)
+        {
+            while (k.length() < 64){
+                k += pad; // pad with zeros  
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(ClamshellUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(ClamshellUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(ClamshellUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(ClamshellUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
-
-        /* Create and display the form via dispatch thread */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            
-            @Override
-            public void run() {
-            //
-                ClamshellUI clam = new ClamshellUI();
-                AuthenticateDialog dialog = new AuthenticateDialog(new javax.swing.JFrame(), true);
-                dialog.setLocationRelativeTo(null);// center the auth dialog window in middle of screen
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    @Override
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
-                
-                if (dialog.getAuthenticated() == true) { // ensure user is validated before continuing
-                    
-                    // make sure we pass the relevant information user provided
-                    //  to new UI screen before disposing of old UI screen
-                    
-                    //authFile = dialog.getAuthFile();
-                    //userName = dialog.getUsername();
-                    
-                    dialog.dispose();
-                    clam.setVisible(true);
-                } else {
-                    System.exit(0); // otherwise, deny access - shutdown program
-                }
-            }
-            //
-        });
+        else if (k.length() > 64)
+        {
+            key = key.substring(0, 64); // truncate
+        }
+        // parse password data into & out of AES 32 hex at a time
+        // first ensure that hex chars are multiple of 32
+        int r = plain.length() % 32; // r = how many we must pad to end
+        int d = plain.length() / 32; // s = number of AES rounds required to cycle thru to encipher all plaintext 
         
+        for (int i = plain.length(); i < plain.length()+r; ++i)
+        {
+            plain += pad;
+        }
+        // now we encipher the padded text
+        for (int i = 0; i < d; ++i)
+        {
+            encryptedPass += aes.encryptString(plain.substring(i*32, i*32+32), iv);
+        }
+        return encryptedPass;
+    }
+    
+    private byte[] hexStringToByteArray(String s) {
+        byte[] b = new byte[s.length() / 2];
+        for (int i = 0; i < b.length; i++) {
+            int index = i * 2;
+            int v = Integer.parseInt(s.substring(index, index + 2), 16);
+            b[i] = (byte) v;
+        }
+        return b;
+    }
+
+    private String byteArrayToHexString(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+            result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addButton;
     private javax.swing.JButton deleteButton;
-    private javax.swing.JTextField deleteRowField;
     private javax.swing.JDialog jDialog1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextPane jTextPane2;

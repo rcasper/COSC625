@@ -1,10 +1,11 @@
 package Clamshell;
 
 /**
- * YAES - AES 256 bit adapted for use in PasswordManager system
+ * YAES - AES 256 bit 
+ * Adapted for modularity in password management system
  * COSC 625 Fall 2013
  * @author Andrew Ramsey
- * @version 2.1
+ * @version 2.2
  */
 public class Yaes {
     
@@ -109,9 +110,7 @@ public class Yaes {
                                     {0x0c,0x02,0x10,0x1e,0x34,0x3a,0x28,0x26,0x7c,0x72,0x60,0x6e,0x44,0x4a,0x58,0x56},
                                     {0x37,0x39,0x2b,0x25,0x0f,0x01,0x13,0x1d,0x47,0x49,0x5b,0x55,0x7f,0x71,0x63,0x6d},
                                     {0xd7,0xd9,0xcb,0xc5,0xef,0xe1,0xf3,0xfd,0xa7,0xa9,0xbb,0xb5,0x9f,0x91,0x83,0x8d}};
-    
-    private String newline = System.getProperty("line.separator"); // newline delimeter
-    
+        
     /**
      * S-BOX table used for Key Expansion and Sub-Bytes.
      */
@@ -160,13 +159,19 @@ public class Yaes {
     private String key;
     
     /**
-     * ZAES class constructor.
+     * YAES class constructor.
      */
     public Yaes(String k) 
     {
         key = k;
     }
     
+    /**
+     * Perform single round of AES-256 Decryption
+     * @param cipher
+     * @param IV
+     * @return 
+     */
     public String decryptString(String cipher, String IV) {
         
         String line = cipher;
@@ -510,12 +515,11 @@ public class Yaes {
     }
 
     /**
-     * For every (binary key size / 32)th column in the expanded key. We compute a special column
+     * For every (binary key size / 32)th column in the expanded key, compute a special column
      * using sbox and an XOR of the an rcon number with the first element in the passed array.
-     * 
      * @param in the array in which we compute the next set of bytes for key expansion
      * @param rconpointer the element in the rcon array with which to XOR the first element in 'in'
-     * @return the next column in the key scheduling.
+     * @return the next column in the key scheduling
      */
     private int[] schedule_core(int[] in, int rconpointer) {
         in = leftrotate(in, 1);

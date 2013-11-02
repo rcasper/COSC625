@@ -1,7 +1,12 @@
 package Clamshell;
 
 import java.util.Random;
-
+/**
+ * Entry object for storing secure password information
+ * COSC 625 Fall 2013
+ * @author Andrew Ramsey
+ * @author Ryan Kasprzyk
+ */
 public class Entry {
     
     public String sName, uName, pw, IV;

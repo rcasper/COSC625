@@ -6,12 +6,11 @@ package Clamshell;
  * COSC 625 Fall 2013
  *
  * @author Andrew Ramsey
- * @version 1.6
+ * @version 1.8
  */
 public class RC4 {
     
     private int[] key, plain, s, cipher;
-    private char hexDigit[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     
     public RC4() {
         
@@ -78,6 +77,9 @@ public class RC4 {
     
     //*****UTILITIES************************************************************
     
+    private String[] hex = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
+    private String[] binary = {"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111"};
+    
     private int[] int2bin(int inp){
         int[] binc = {128,64,32,16,8,4,2,1};
         int[] outp = new int[8];
@@ -103,8 +105,7 @@ public class RC4 {
     }
     
     private String h2b(String inp){
-        String[] hex = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
-        String[] binary = {"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111"};
+
         String result = "";
         for (int i = 0; i < inp.length(); ++i) {
             char temp = inp.charAt(i);
@@ -119,8 +120,7 @@ public class RC4 {
     }
 
     private String b2h(String inp){
-        String[] hex = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
-        String[] binary = {"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111"};
+        
         String result1 = ""; String result2 = "";
             String temp1 = inp.substring(0, 4);
             String temp2 = inp.substring(4, 8);

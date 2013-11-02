@@ -2,13 +2,18 @@ package Clamshell;
 
 import java.io.*;
 import javax.swing.JOptionPane;
-//import java.nio.file.*;
-
+/**
+ * Authenticate UI for Password Management System
+ * COSC 625 Fall 2013
+ * @author Andrew Ramsey
+ * @version 1.1
+ */
 public class AuthenticateDialog extends javax.swing.JDialog {
 
     private boolean isAuthenticated = false;
-    private File authFile;
+    private File authFile  = null;
     private String userName;
+    private String masterPass;
     
     /**
      * Creates new form AuthenticateDialog
@@ -33,10 +38,10 @@ public class AuthenticateDialog extends javax.swing.JDialog {
      */
     public File getAuthFile()
     {
-        if (!authFile.exists())
+        /*if (!authFile.exists() || authFile == null)
         {
             return null;
-        }
+        }*/
         return authFile;
     }
     
@@ -47,6 +52,15 @@ public class AuthenticateDialog extends javax.swing.JDialog {
     public String getUsername()
     {
         return userName;
+    }
+    
+    /**
+     * Return master pass
+     * @return 
+     */
+    public String getMasterPass()
+    {
+        return masterPass;
     }
     
     /**
@@ -67,21 +81,27 @@ public class AuthenticateDialog extends javax.swing.JDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Authentication");
+        setIconImage(null);
+        setIconImages(null);
+        setName(""); // NOI18N
         setResizable(false);
 
+        username.setToolTipText("Enter User Name");
         username.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                usernameKeyTyped(evt);
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                unamePassKeyTyped(evt);
             }
         });
 
+        password.setToolTipText("Enter Master Password");
         password.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                usernameKeyTyped(evt);
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                unamePassKeyTyped(evt);
             }
         });
 
         openButton.setText("Open");
+        openButton.setToolTipText("Open Password File");
         openButton.setEnabled(false);
         openButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -94,6 +114,7 @@ public class AuthenticateDialog extends javax.swing.JDialog {
         jLabel3.setText("User Name");
 
         newButton.setText("New");
+        newButton.setToolTipText("Create New Password File");
         newButton.setEnabled(false);
         newButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -113,9 +134,9 @@ public class AuthenticateDialog extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(openButton, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(newButton))
+                        .addComponent(openButton, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(newButton, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(password, javax.swing.GroupLayout.PREFERRED_SIZE, 216, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 216, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
@@ -138,30 +159,17 @@ public class AuthenticateDialog extends javax.swing.JDialog {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-    
-    /**
-     * Check if password decrypted matched user input for given password file
-     * @param s
-     * @return 
-     */
-    private boolean passwordChecked(String pw)
-    {
-        //eventually we must ensure that the filename (encrypted) matches 
-        //the uname & password supplied by the user, when uname is encrypted
-        //it is checked to make sure there is a match or not
-        return fileExists(pw);
-    }
-    
+        
     /**
      * Attempt to Authenticate user
      * @param evt 
      */
     private void openButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openButtonActionPerformed
         
-        // check if file exists, then check if password is matching
-        if (fileExists(username.getText())){
+        // check if file exists, then check if password is matching        
+        if (fileExists(encryptUnameRC4())){
             isAuthenticated = true;
-            authFile = new File(username.getText() + ".txt");
+            authFile = null; // set to null, file will be opened in context of ClamshellUI window instead so that it is not replaced with a new blank file
             this.dispose();// get rid of this instance
         }
         else // otherwise, throw error
@@ -176,8 +184,11 @@ public class AuthenticateDialog extends javax.swing.JDialog {
      * @param evt
      */
     private void newButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newButtonActionPerformed
-        // first check if file exists, if so report error
-        if (fileExists(username.getText())){
+        
+        String encryptedUserName = encryptUnameRC4();
+        
+        // first check if file exists, if so report error                
+        if (fileExists(encryptedUserName)){
             JOptionPane.showMessageDialog(null, "User Name Already Exists", "Invalid User Name", JOptionPane.ERROR_MESSAGE);
         }
         else // otherwise, proceed to create new file
@@ -188,31 +199,21 @@ public class AuthenticateDialog extends javax.swing.JDialog {
             if (confirm == JOptionPane.OK_OPTION) {
        
                 isAuthenticated = true;
-                userName = username.getText();
-                authFile = new File(encryptUnameRC4());
-
-                try {
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(authFile));
-                    bw.write(userName);
-                    bw.write(password.getText());
-                    bw.close();
-                } catch (Exception o) {
-                }
-                this.dispose(); // run main UI
+                authFile = new File(encryptedUserName);
+                
+                this.dispose();// get rid of this instance
+                
             } else {
                 // return to auhentication UI
             }
         }
     }//GEN-LAST:event_newButtonActionPerformed
 
-    /**
-     * If text typed in username and password, enable authentication buttons
-     * @param evt 
-     */
-    private void usernameKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_usernameKeyTyped
-        // has to be length 2 or more because UI elements mess up
-        if (username.getText().isEmpty() == false && password.getText().isEmpty() == false
-              &&  username.getText().length() > 1 && username.getText().length() > 1) 
+    private void unamePassKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_unamePassKeyTyped
+        userName = username.getText();
+        masterPass = password.getText();
+        
+        if (username.getText().length() > 1 && password.getText().length() > 1)
         {
             openButton.setEnabled(true);
             newButton.setEnabled(true);
@@ -222,7 +223,7 @@ public class AuthenticateDialog extends javax.swing.JDialog {
             openButton.setEnabled(false);
             newButton.setEnabled(false);
         }
-    }//GEN-LAST:event_usernameKeyTyped
+    }//GEN-LAST:event_unamePassKeyTyped
     
     /**
      * Convert user name input to RC4-encrypted string
@@ -230,11 +231,10 @@ public class AuthenticateDialog extends javax.swing.JDialog {
      */
     private String encryptUnameRC4()
     {
-        String uname = username.getText();
-        String pass = password.getText();
         RC4 rc = new RC4();
-        String encryptedFileName = rc.cipher(uname, pass);
-        return encryptedFileName;
+        String ret = rc.cipher(byteArrayToHexString(userName.getBytes()), byteArrayToHexString(masterPass.getBytes()));
+        //System.out.println(ret);
+        return ret;
     }
         
     /**
@@ -243,13 +243,31 @@ public class AuthenticateDialog extends javax.swing.JDialog {
      * @return 
      */
     private boolean fileExists(String s) {
-        File f = new File(s + ".txt");
+        File f = new File(s);
 
         if (f.exists()) {
             return true;
         } else {
             return false;
         }
+    }
+    
+    private byte[] hexStringToByteArray(String s) {
+        byte[] b = new byte[s.length() / 2];
+        for (int i = 0; i < b.length; i++) {
+            int index = i * 2;
+            int v = Integer.parseInt(s.substring(index, index + 2), 16);
+            b[i] = (byte) v;
+        }
+        return b;
+    }
+
+    private String byteArrayToHexString(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+            result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
