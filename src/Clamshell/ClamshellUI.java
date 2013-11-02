@@ -18,6 +18,7 @@ public class ClamshellUI extends javax.swing.JFrame {
     private final String delimeter = "   "; // entry data delimeter
     private final String newline = "\r\n"; // new line delimeter for DOS/Windows but also will work for UNIX
     private final String pad = "0";
+    private final String placeholder = "000";
     
     // the values passed in from initial UI window (authentication procedure)
     private File authFile;
@@ -43,7 +44,7 @@ public class ClamshellUI extends javax.swing.JFrame {
     /**
      * UI constructor
      * Provides authentication and loads entry objects
-     * Then create ClamshellUI and etc...
+     * Then create ClamshellUI and perform crypto IO
      */
     public ClamshellUI() {
         initComponents();
@@ -82,8 +83,8 @@ public class ClamshellUI extends javax.swing.JFrame {
                     System.exit(5);
                 }                
                 bigSky = RC4Cipher(bigSky, masterPass); // decrypt raw data from password file
-                String[] rawEntries = bigSky.split('['+delimeter+']' + '['+newline+']'); //split on delimeter and newline symbols
-                
+                String[] rawEntries = bigSky.split('['+delimeter+']');
+                //String[] rawEntries = bigSky.split('['+delimeter+']' + '['+newline+']'); //split on delimeter and newline symbols
                 for (int i = 0; i < rawEntries.length; i += 4){
                     // sname, uname, IV, pass
                     passList.add(new Entry(rawEntries[i], rawEntries[i+1], rawEntries[i+2], rawEntries[i+3]));
@@ -98,7 +99,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         else {System.exit(0);}     
     }
     
-    // initComponents() below: *******************************************************************************************************************************************************
+    // initComponents() below: 
     //Auto-Generated Code from Java Swing GUI builder 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -244,7 +245,7 @@ public class ClamshellUI extends javax.swing.JFrame {
      */
     private void updateTextArea() {
         String bigSky = "";
-        String bigSky2 = "";
+        String bigSky2 = ""; // used to generate raw data for password file output including init vector value to decrypt password values with AES
         for (int i = 0; i < passList.size(); ++i) {
             bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
             // sname, uname, IV, pass
@@ -274,23 +275,40 @@ public class ClamshellUI extends javax.swing.JFrame {
     }
     
     /**
-     * Add Entry From three inputs to jTextPane2
-     * with entry number stamp attached
+     * Add Entry From three inputs on Clamshell UI
+     * Then update passList, UI
      * @param evt 
      */
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
         
-        passList.add(new Entry(sname.getText(), uname.getText(), pass.getText()));
-        sname.setText("");
+        String sn = sname.getText();
+        String un = uname.getText();
+        String pss = pass.getText();
+        
+        if (sn.isEmpty()) // create placeholder variables so that when decrypted, delimeters are not skipped
+        {
+            sn = placeholder;
+        }
+        if (un.isEmpty())
+        {
+            un = placeholder;
+        }
+        if (pss.isEmpty())
+        {
+            pss = placeholder;
+        }
+        
+        passList.add(new Entry(sn, un, pss));
+        sname.setText(""); // reset UI fields
         uname.setText("");
         pass.setText("");
         if (!passList.isEmpty())
         {
-            deleteButton.setEnabled(true);
+            deleteButton.setEnabled(true); // now we can delete entries
         }
         else
         {
-            deleteButton.setEnabled(false); // now we can delete entries
+            deleteButton.setEnabled(false); 
         }
         updateTextArea();
         updatePasswordFile();
@@ -306,10 +324,41 @@ public class ClamshellUI extends javax.swing.JFrame {
         return rc.cipher(byteArrayToHexString(u.getBytes()), byteArrayToHexString(p.getBytes()));
     }
     
-    private String decryptAES(String plain, String k, String iv)
+    private String decryptAES(String cipher, String k, String iv)
     {
+        // convert to hexadecimal
+        String plaintext = byteArrayToHexString(cipher.getBytes());
+        String key = byteArrayToHexString(k.getBytes());
+        // init vector already in hexadecimal - no need to convert
+        Yaes aes = new Yaes(key);
+        String decryptedPass = "";
+        // ensure key length to 64 chars hex
+        // IV length is already set to 32 chars hex by Entry object
+        if (key.length() < 64)
+        {
+            while (k.length() < 64){
+                k += pad; // pad with zeros  
+            }
+        }
+        else if (k.length() > 64)
+        {
+            key = key.substring(0, 64); // truncate
+        }
+        // parse password data into & out of AES 32 hex at a time
+        // first ensure that hex chars are multiple of 32
+        int r = cipher.length() % 32; // r = how many we must pad to end
+        int d = cipher.length() / 32; // s = number of AES rounds required to cycle thru to encipher all plaintext 
         
-        return null;
+        for (int i = cipher.length(); i < cipher.length()+r; ++i)
+        {
+            cipher += pad;
+        }
+        // now we encipher the padded text
+        for (int i = 0; i < d; ++i)
+        {
+            decryptedPass += aes.encryptString(cipher.substring(i*32, i*32+32), iv);
+        }
+        return decryptedPass;
     }
     
     /**
