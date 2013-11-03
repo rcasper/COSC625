@@ -85,16 +85,18 @@ public class ClamshellUI extends javax.swing.JFrame {
                     System.exit(5);
                 }                
                 bigSky = RC4Cipher(bigSky, masterPass); // decrypt raw data from password file
-                String[] rawEntries = bigSky.split(delimeter);
+                System.out.println(bigSky);
+                //String[] rawEntries = bigSky.split('['+delimeter+']');
                 //String[] rawEntries = bigSky.split('['+delimeter+']' + '['+newline+']'); //split on delimeter and newline symbols
                 /*for (int i = 0; i < rawEntries.length; i += 4){
                     // sname, uname, IV, pass
                     passList.add(new Entry(rawEntries[i], rawEntries[i+1], rawEntries[i+2], rawEntries[i+3]));
                 }*/
-                for (int i = 0; i < rawEntries.length; i++)
+                /*for (int i = 0; i < rawEntries.length; i++)
                 {
                     System.out.println(rawEntries[i]);
-                }
+                }*/
+                
                 deleteButton.setEnabled(true);
             } else // we are creating a new file - none yet exists
             {
@@ -259,21 +261,23 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         jTextPane2.setText(bigSky); // delete entry from flexible object type (arraylist)
         jTextPane2.updateUI(); // update jTextField2 (text area)
-        writeHelper = bigSky2; // for writing to File
+        
+        writeHelper = RC4Cipher(bigSky2, masterPass); // encrypt using RC4 for writing to File
+        System.out.println(writeHelper);
     }
     
     /**
      * Write RC4-encrypted entry data to file
      */
     private void updatePasswordFile() {
-        // I wrote the code this way to be more "Java-like" in convention
-        if (authFile == null) { // authFile.exists()
+        
+        if (authFile == null) {
             //String encryptedFileName = RC4Cipher(userName, masterPass);
             authFile = new File(RC4Cipher(userName, masterPass));
         }
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(authFile));
-            writer.write(RC4Cipher(writeHelper, masterPass));
+            writer.write(writeHelper);
             writer.close();
         } catch (Exception e) {
             System.exit(10);
@@ -332,14 +336,14 @@ public class ClamshellUI extends javax.swing.JFrame {
     
     /**
      * Decrypt ciphertext password
-     * @param cipher - plaintext hexadecimal
+     * @param cipher - plaintext in hexadecimal
      * @param k - key as 
      * @param iv
      * @return String
      */
     private String decryptAES(String cipher, String k, String iv)
     {
-        // convert to hexadecimal
+        // no need to convert to hexadecimal - input text is already hexadecimal
         //cipher = byteArrayToHexString(cipher.getBytes());
         String key = byteArrayToHexString(k.getBytes());
         // init vector already in hexadecimal - no need to convert
