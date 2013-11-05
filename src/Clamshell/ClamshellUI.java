@@ -251,8 +251,8 @@ public class ClamshellUI extends javax.swing.JFrame {
         for (int i = 0; i < passList.size(); ++i) {
             bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
             // sname, uname, IV, pass
-            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV) + newline;
-            //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
+            //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV) + newline;
+            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
         }
         jTextPane2.setText(bigSky); 
         jTextPane2.updateUI(); // update jTextField2 (text area)
