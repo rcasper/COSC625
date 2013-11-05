@@ -5,10 +5,10 @@ package Clamshell;
  * Adapted for modularity in password management system
  * COSC 625 Fall 2013
  * @author Andrew Ramsey
- * @version 2.2
+ * @version 2.4
  */
 public class Yaes {
-    
+    // first set up all m-box constants - available online to copy paste (wiki s-box)
     private int[][] mc2 ={{0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e},
                                             {0x20, 0x22, 0x24, 0x26, 0x28, 0x2a, 0x2c, 0x2e, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3a, 0x3c, 0x3e},
                                             {0x40, 0x2, 0x44, 0x46, 0x48, 0x4a, 0x4c, 0x4e, 0x50, 0x52, 0x54, 0x56, 0x58, 0x5a, 0x5c, 0x5e},
@@ -160,6 +160,7 @@ public class Yaes {
     
     /**
      * YAES class constructor.
+     * @param k - key = 64 char hex (64*4 = 256 bit)
      */
     public Yaes(String k) 
     {
@@ -168,9 +169,9 @@ public class Yaes {
     
     /**
      * Perform single round of AES-256 Decryption
-     * @param cipher
-     * @param IV
-     * @return 
+     * @param cipher - ciphertext as 32 hexadecimal character string
+     * @param IV - initialization vector , 32 hex character string
+     * @return decrypted plaintext as 32 hex character string
      */
     public String decryptString(String cipher, String IV) {
         
@@ -206,18 +207,17 @@ public class Yaes {
     
     /**
      * Perform single round of AES-256 Encryption
-     * @param plain
-     * @param key
-     * @param IV
-     * @return 
+     * @param plain - plaintext as 32 hexadecimal character string
+     * @param IV - initialization vector , 32 hex character string
+     * @return ciphertext in hexadecimal 32 character string
      */
     public String encryptString(String plain, String IV) {
 
         int numRounds = 14;
         int[][] state, initvector = new int[4][4];
         int[][] keymatrix = keySchedule(key);
-        for (int i = 0; i < 4; i++) { // parse init vector into 4x4 matrix
-            for (int j = 0; j < 4; j++) {
+        for (int i = 0; i < 4; i++) { // parse init vector into 4x4 matrix as integer values
+            for (int j = 0; j < 4; j++) { // number 16 represents hexadecimal base value of 16 
                 initvector[j][i] = Integer.parseInt(IV.substring((8 * i) + (2 * j), (8 * i) + (2 * j + 2)), 16);
             }
         }
@@ -241,7 +241,7 @@ public class Yaes {
         subBytes(state); //implements the Sub-Bytes subroutine.
         shiftRows(state); //implements Shift-Rows subroutine.
         addRoundKey(state, subKey(keymatrix, numRounds));
-        return (MatrixToString(state));
+        return MatrixToString(state);
     }
     
     private void deepCopy2DArray(int[][] destination, int[][] source)
@@ -254,7 +254,7 @@ public class Yaes {
     }
 
     /**
-     * Pulls out the subkey from the key formed from the keySchedule method
+     * Pulls out  subkey from key formed via keySchedule method
      * @param km key formed from AES.keySchedule()
      * @param begin index of where to fetch the subkey
      * @return The chunk of the scheduled key based on begin.
@@ -270,7 +270,7 @@ public class Yaes {
     }
 
     /**
-     * Replaces all elements in the passed array with values in sbox[][].
+     * Replaces all elements in array passed with values in sbox[][].
      * @param arr Array whose value will be replaced
      * @return The array who's value was replaced.
      */
@@ -440,7 +440,7 @@ public class Yaes {
     }
 
     /**
-     * Helper computing method for inverted mixColumns.
+     * Helper method for computing inverted mixColumns.
      *
      * @param a Row Position of mcX.
      * @param b Column Position of mcX
@@ -461,7 +461,7 @@ public class Yaes {
     }
 
     /**
-     *The keyScheduling algorithm to expand a short key into a number of separate round keys.
+     * keyScheduling algorithm expands a short-length key into a number of separate round keys.
      *
      * @param key the key in which key expansion will be computed upon.
      * @return the fully computed expanded key for the AES encryption/decryption.
@@ -516,7 +516,8 @@ public class Yaes {
 
     /**
      * For every (binary key size / 32)th column in the expanded key, compute a special column
-     * using sbox and an XOR of the an rcon number with the first element in the passed array.
+     * use sbox and an XOR of the rcon number with the first element in the passed array.
+     * 
      * @param in the array in which we compute the next set of bytes for key expansion
      * @param rconpointer the element in the rcon array with which to XOR the first element in 'in'
      * @return the next column in the key scheduling
@@ -533,7 +534,7 @@ public class Yaes {
     }
 
     /**
-     * AddRoundKey: subkey is combined with the state. 
+     * AddRoundKey algorithm - subkey is combined with state.
      * For each round, a chunk of the key scheduled is pulled - each subkey is the same size as the state. 
      * Each element in the byte matrix is XOR'd with each element in the chunk of the expanded key.
      * 
@@ -544,13 +545,13 @@ public class Yaes {
     {
         for (int i = 0; i < bytematrix.length; i++) {
             for (int j = 0; j < bytematrix[0].length; j++) {
-                bytematrix[j][i] ^= keymatrix[j][i];
+                bytematrix[j][i] ^= keymatrix[j][i];// perform xor on element
             }
         }
     }
 
     /**
-     * ToString() for the matrix (2D array).
+     * 2D display of matrix (2D array)
      * 
      * @param m reference of the matrix
      * @return the string representation of the matrix.

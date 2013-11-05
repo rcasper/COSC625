@@ -38,10 +38,6 @@ public class AuthenticateDialog extends javax.swing.JDialog {
      */
     public File getAuthFile()
     {
-        /*if (!authFile.exists() || authFile == null)
-        {
-            return null;
-        }*/
         return authFile;
     }
     
@@ -86,14 +82,14 @@ public class AuthenticateDialog extends javax.swing.JDialog {
         setName(""); // NOI18N
         setResizable(false);
 
-        username.setToolTipText("Enter User Name");
+        username.setToolTipText("");
         username.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 unamePassKeyTyped(evt);
             }
         });
 
-        password.setToolTipText("Enter Master Password");
+        password.setToolTipText("");
         password.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 unamePassKeyTyped(evt);
@@ -166,8 +162,10 @@ public class AuthenticateDialog extends javax.swing.JDialog {
      */
     private void openButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openButtonActionPerformed
         
+        String encryptedUserName = encryptUnameRC4();
+        
         // check if file exists, then check if password is matching        
-        if (fileExists(encryptUnameRC4())){
+        if (fileExists(encryptedUserName)){
             isAuthenticated = true;
             authFile = null; // set to null, file will be opened in context of ClamshellUI window instead so that it is not replaced with a new blank file
             this.dispose();// get rid of this instance
@@ -229,12 +227,9 @@ public class AuthenticateDialog extends javax.swing.JDialog {
      * Convert user name input to RC4-encrypted string
      * @return 
      */
-    private String encryptUnameRC4()
-    {
-        RC4 rc = new RC4();
-        String ret = rc.cipher(byteArrayToHexString(userName.getBytes()), byteArrayToHexString(masterPass.getBytes()));
-        //System.out.println(ret);
-        return ret;
+    private String encryptUnameRC4(){
+        
+        return RC4Cipher(userName, masterPass);
     }
         
     /**
@@ -252,6 +247,56 @@ public class AuthenticateDialog extends javax.swing.JDialog {
         }
     }
     
+    /**
+     * Convert user name input to RC4-encrypted string
+     * @return 
+     */
+    private String RC4Cipher(String u, String p)
+    {
+        // first convert to hexadecimal then byte array, then back to hex              
+        return byteArrayToHexString(RC4(hexStringToByteArray(stringToHex(u)), hexStringToByteArray(stringToHex(p))));
+    }
+    
+    /**
+     * RC4 Cipher in Bytes
+     *
+     * @param unlocked
+     * @param key
+     * @return
+     */
+    public byte[] RC4(byte[] unlocked, byte[] key) {
+        byte[] S = new byte[256];
+        for (int temp = 0; temp < 256; temp++) {
+            S[temp] = (byte) temp;
+        }
+        int j = 0;
+        byte swap;
+        int i;
+        for (i = 0; i < 256; i++)//KSA
+        {
+            j = (j + key[i % key.length] + S[i]) & 255;
+            swap = S[i];
+            S[i] = S[j];
+            S[j] = swap;
+        }
+        i = j = 0;
+        byte[] keystream = new byte[unlocked.length];
+        for (int place = 0; place < unlocked.length; place++)//PRGA //Middle argument is how much stream to gen
+        {
+            i = (i + 1) & 255;
+            j = (j + S[i]) & 255;
+            swap = S[i];
+            S[i] = S[j];
+            S[j] = swap;
+            keystream[place] = S[(S[i] + S[j]) & 255];
+        }
+        byte[] ciphertext = new byte[keystream.length];
+        for (int place = 0; place < ciphertext.length; place++) {
+            ciphertext[place] = (byte) (keystream[place] ^ unlocked[place]);
+        }
+        return ciphertext;
+    }
+        
     private byte[] hexStringToByteArray(String s) {
         byte[] b = new byte[s.length() / 2];
         for (int i = 0; i < b.length; i++) {
@@ -261,13 +306,30 @@ public class AuthenticateDialog extends javax.swing.JDialog {
         }
         return b;
     }
-
+    
     private String byteArrayToHexString(byte[] b) {
         String result = "";
         for (int i = 0; i < b.length; i++) {
             result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
         }
         return result;
+    }
+    // convert back to plaintext
+    public String byteToString(byte[] in){
+        String output = "";
+        for(int a = 0;a < in.length;a++)
+        {
+            output += (char)in[a];
+        }
+        return output;
+    }
+    // convert plaintext string to hexadecimal (length is always x2 plaintext)
+    private String stringToHex(String string){
+        StringBuilder buf = new StringBuilder(200);
+        for (char ch : string.toCharArray()) {
+            buf.append(String.format("%02x", (int) ch));
+        }
+        return buf.toString();
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables

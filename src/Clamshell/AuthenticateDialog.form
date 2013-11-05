@@ -76,7 +76,7 @@
   <SubComponents>
     <Component class="javax.swing.JTextField" name="username">
       <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Enter User Name"/>
+        <Property name="toolTipText" type="java.lang.String" value=""/>
       </Properties>
       <Events>
         <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="unamePassKeyTyped"/>
@@ -84,7 +84,7 @@
     </Component>
     <Component class="javax.swing.JTextField" name="password">
       <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Enter Master Password"/>
+        <Property name="toolTipText" type="java.lang.String" value=""/>
       </Properties>
       <Events>
         <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="unamePassKeyTyped"/>

@@ -1,15 +1,14 @@
 package Clamshell;
 
 import java.io.*;
-import java.nio.CharBuffer;
-import java.nio.ByteBuffer;
+import java.nio.charset.*;
 import javax.swing.*;
 import java.util.ArrayList;
 /**
  * Main UI for secure password management application
  * COSC 625 Fall 2013
  * @author Andrew Ramsey
- * @version 1.6
+ * @version 1.8
  */
 public class ClamshellUI extends javax.swing.JFrame {
     
@@ -18,9 +17,10 @@ public class ClamshellUI extends javax.swing.JFrame {
     
     // default designations for delimeters and padding
     private final String delimeter = "   "; // entry data delimeter
-    private final String newline = "\r\n"; // new line delimeter for DOS/Windows but also will work for UNIX
+    private final String newline = "\n";
     private final String pad = "0";
     private final String placeholder = "000"; // placeholder represents blank fields inside entry object when encrypted to file
+    private final Charset charset = Charset.forName("UTF-8");
     
     // the values passed in from initial UI window (authentication procedure)
     private File authFile;
@@ -73,31 +73,26 @@ public class ClamshellUI extends javax.swing.JFrame {
             
             if (authFile == null) // we are opening existing user's password file
             {
-                String encryptedFileName = RC4Cipher(userName, masterPass);
                 String bigSky = "";
-                try { // read the raw data, then decrypt using RC4 and master password
-                    BufferedReader reader = new BufferedReader(new FileReader(encryptedFileName));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        bigSky += line;
-                    }
-                } catch (Exception e) {
-                    System.exit(5);
-                }                
-                bigSky = RC4Cipher(bigSky, masterPass); // decrypt raw data from password file
-                System.out.println(bigSky);
-                //String[] rawEntries = bigSky.split('['+delimeter+']');
-                //String[] rawEntries = bigSky.split('['+delimeter+']' + '['+newline+']'); //split on delimeter and newline symbols
-                /*for (int i = 0; i < rawEntries.length; i += 4){
-                    // sname, uname, IV, pass
-                    passList.add(new Entry(rawEntries[i], rawEntries[i+1], rawEntries[i+2], rawEntries[i+3]));
-                }*/
-                /*for (int i = 0; i < rawEntries.length; i++)
-                {
-                    System.out.println(rawEntries[i]);
-                }*/
+                String encryptedFileName = RC4Cipher(userName, masterPass);
                 
+                bigSky = readFromFile(encryptedFileName);
+                //System.out.println("loaded data: "+bigSky);
+                // decrypt raw data from password file
+                String deciphered = byteToString(RC4(hexStringToByteArray(bigSky), hexStringToByteArray(stringToHex(masterPass)))); 
+                //System.out.println("loaded data after RC4 decrypt: "+deciphered);
+                String[] entryLines = deciphered.split(newline);
+                // By Andrew P Ramsey 2013
+                for (int i = 0; i < entryLines.length; ++i)
+                {
+                    String[] rawEntries = entryLines[i].split(delimeter);
+                    // sname, uname, IV, pass
+                    passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], rawEntries[3]));
+                }
                 deleteButton.setEnabled(true);
+                updateTextArea();
+                 updatePasswordFile();
+                
             } else // we are creating a new file - none yet exists
             {
                 // new file, therefore nothing to do here
@@ -134,7 +129,6 @@ public class ClamshellUI extends javax.swing.JFrame {
         );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setAlwaysOnTop(true);
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setIconImages(null);
         setMinimumSize(new java.awt.Dimension(554, 255));
@@ -221,7 +215,7 @@ public class ClamshellUI extends javax.swing.JFrame {
                 
                 if (entryNumber >= 0 && entryNumber < passList.size())
                 {
-                    passList.remove((int)entryNumber);
+                    passList.remove((int)entryNumber); // delete entry from flexible object type (arraylist)
                 }
                 else
                 {
@@ -257,13 +251,14 @@ public class ClamshellUI extends javax.swing.JFrame {
         for (int i = 0; i < passList.size(); ++i) {
             bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
             // sname, uname, IV, pass
-            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + delimeter;
+            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV) + newline;
+            //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
         }
-        jTextPane2.setText(bigSky); // delete entry from flexible object type (arraylist)
+        jTextPane2.setText(bigSky); 
         jTextPane2.updateUI(); // update jTextField2 (text area)
         
         writeHelper = RC4Cipher(bigSky2, masterPass); // encrypt using RC4 for writing to File
-        System.out.println(writeHelper);
+        //System.out.println("output to file: "+writeHelper);
     }
     
     /**
@@ -276,12 +271,46 @@ public class ClamshellUI extends javax.swing.JFrame {
             authFile = new File(RC4Cipher(userName, masterPass));
         }
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(authFile));
-            writer.write(writeHelper);
-            writer.close();
-        } catch (Exception e) {
-            System.exit(10);
+        writeToFile();
+        }catch (Exception e) {
+            System.exit(66);
         }
+    }
+    
+    public void writeToFile() throws IOException {
+    OutputStream out = new FileOutputStream(authFile);
+    Closeable stream = out;
+    try {
+      Writer writer = new OutputStreamWriter(out, charset);
+      stream = writer;
+      writer.write(writeHelper);
+    } finally {
+      stream.close();
+    }
+  }
+
+    public String readFromFile(String file) {
+
+        try {
+            InputStream in = new FileInputStream(file);
+            Closeable stream = in;
+            Reader reader = new InputStreamReader(in, charset);
+            stream = reader;
+            StringBuilder inputBuilder = new StringBuilder();
+            char[] buffer = new char[1024];
+            while (true) {
+                int readCount = reader.read(buffer);
+                if (readCount < 0) {
+                    break;
+                }
+                inputBuilder.append(buffer, 0, readCount);
+            }
+            stream.close();
+            return inputBuilder.toString();
+
+        } catch (Exception e) {
+        }
+        return null;
     }
     
     /**
@@ -309,9 +338,13 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         
         passList.add(new Entry(sn, un, pss));
+        updateTextArea();
+        updatePasswordFile();
+        
         sname.setText(""); // reset UI fields
         uname.setText("");
         pass.setText("");
+        
         if (!passList.isEmpty())
         {
             deleteButton.setEnabled(true); // now we can delete entries
@@ -320,8 +353,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         {
             deleteButton.setEnabled(false); 
         }
-        updateTextArea();
-        updatePasswordFile();
+        
     }//GEN-LAST:event_addButtonActionPerformed
         
     /**
@@ -330,25 +362,64 @@ public class ClamshellUI extends javax.swing.JFrame {
      */
     private String RC4Cipher(String u, String p)
     {
-        RC4 rc = new RC4();
-        return rc.cipher(byteArrayToHexString(u.getBytes()), byteArrayToHexString(p.getBytes()));
+        return byteArrayToHexString(RC4(hexStringToByteArray(stringToHex(u)), hexStringToByteArray(stringToHex(p))));
+    }
+    
+    /**
+     * RC4 Cipher in Bytes
+     *
+     * @param unlocked
+     * @param key
+     * @return
+     */
+    public byte[] RC4(byte[] unlocked, byte[] key) {
+        byte[] S = new byte[256];
+        for (int temp = 0; temp < 256; temp++) {
+            S[temp] = (byte) temp;
+        }
+        int j = 0;
+        byte swap;
+        int i;
+        for (i = 0; i < 256; i++)//KSA
+        {
+            j = (j + key[i % key.length] + S[i]) & 255;
+            swap = S[i];
+            S[i] = S[j];
+            S[j] = swap;
+        }
+        i = j = 0;
+        byte[] keystream = new byte[unlocked.length];
+        for (int place = 0; place < unlocked.length; place++)//PRGA //Middle argument is how much stream to gen
+        {
+            i = (i + 1) & 255;
+            j = (j + S[i]) & 255;
+            swap = S[i];
+            S[i] = S[j];
+            S[j] = swap;
+            keystream[place] = S[(S[i] + S[j]) & 255];
+        }
+        byte[] ciphertext = new byte[keystream.length];
+        for (int place = 0; place < ciphertext.length; place++) {
+            ciphertext[place] = (byte) (keystream[place] ^ unlocked[place]);
+        }
+        return ciphertext;
     }
     
     /**
      * Decrypt ciphertext password
      * @param cipher - plaintext in hexadecimal
-     * @param k - key as 
-     * @param iv
+     * @param k - key as plain text
+     * @param iv - initialization vector (already hex)
      * @return String
      */
     private String decryptAES(String cipher, String k, String iv)
     {
         // no need to convert to hexadecimal - input text is already hexadecimal
         //cipher = byteArrayToHexString(cipher.getBytes());
-        String key = byteArrayToHexString(k.getBytes());
+        String key = stringToHex(k);
         // init vector already in hexadecimal - no need to convert
-        Yaes aes = new Yaes(key);
-        String decryptedPass = "";
+        
+        String decryptedPass = ""; // what we return from method
         // ensure key length to 64 chars hex
         // IV length is already set to 32 chars hex by Entry object
         if (key.length() < 64)
@@ -371,34 +442,35 @@ public class ClamshellUI extends javax.swing.JFrame {
             cipher += pad;
         }
         // now we decipher the padded text
+        Yaes aes = new Yaes(key);
         for (int i = 0; i < d; ++i)
         {
             decryptedPass += aes.decryptString(cipher.substring(i*32, i*32+32), iv);
-        }
-        return bytesToStringUTFNIO(hexStringToByteArray(decryptedPass));
+        }// we are handed back 32 char hex string from AES 256 decryption
+        // convert it back to plaintext
+        return byteToString(hexStringToByteArray(decryptedPass));
     }
     
     /**
      * Encrypt using AES 256
-     * @param plain - plaintext
-     * @param k - key
-     * @param iv - initialization vector
+     * @param plain - plaintext as plain text
+     * @param k - key as plain text
+     * @param iv - initialization vector (already hex)
      * @return String - encrypted text as hexadecimal
      */
-    private String encryptAES(String plain, String k, String iv)
+    private String encryptAES(String p, String k, String iv)
     {
         // convert to hexadecimal
-        plain = byteArrayToHexString(plain.getBytes());
-        String key = byteArrayToHexString(k.getBytes());
+        String plain = stringToHex(p);
+        String key = stringToHex(k);
         // init vector already in hexadecimal - no need to convert
-        Yaes aes = new Yaes(key);
         String encryptedPass = "";
-        // ensure key length to 64 chars hex
+        // ensure key length to 64 chars hex (64 * 4 = 256)
         // IV length is already set to 32 chars hex by Entry object
         if (key.length() < 64)
         {
             while (k.length() < 64){
-                k += pad; // pad with zeros  
+                k += pad; // pad with zeros
             }
         }
         else if (k.length() > 64)
@@ -415,6 +487,7 @@ public class ClamshellUI extends javax.swing.JFrame {
             plain += pad;
         }
         // now we encipher the padded text
+        Yaes aes = new Yaes(key);
         for (int i = 0; i < d; ++i)
         {
             encryptedPass += aes.encryptString(plain.substring(i*32, i*32+32), iv);
@@ -439,20 +512,24 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         return result;
     }
-    
-    public byte[] stringToBytesUTFNIO(String str) {
-        char[] buffer = str.toCharArray();
-        byte[] b = new byte[buffer.length << 1];
-        CharBuffer cBuffer = ByteBuffer.wrap(b).asCharBuffer();
-        for (int i = 0; i < buffer.length; i++) {
-            cBuffer.put(buffer[i]);
+    // convert back to plaintext
+    public String byteToString(byte[] in){
+        String output = "";
+        for(int a = 0;a < in.length;a++)
+        {
+            output += (char)in[a];
         }
-        return b;
+        return output;
     }
-    
-    public String bytesToStringUTFNIO(byte[] bytes) {
-        CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
-        return cBuffer.toString();
+    // convert plaintext string to hexadecimal (length is always x2 plaintext)
+    private String stringToHex(String s){
+        
+        StringBuilder buf = new StringBuilder(200);
+        for (char ch : s.toCharArray()) {
+            buf.append(String.format("%02x", (int) ch));
+        }
+        return buf.toString();
+        //return byteArrayToHexString(s.getBytes());
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables

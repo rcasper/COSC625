@@ -20,7 +20,7 @@ public class Entry {
         rand.nextBytes(bIV);
         IV = getHexString(bIV).toUpperCase();
     }
-
+    
     public Entry(String s_name, String u_name, String iv, String pass) {
         sName = s_name;
         uName = u_name;
