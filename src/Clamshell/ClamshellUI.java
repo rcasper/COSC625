@@ -70,38 +70,37 @@ public class ClamshellUI extends javax.swing.JFrame {
             masterPass = dialog.getMasterPass();
             isAuthenticated = dialog.getAuthenticated();
             dialog.dispose(); // we are done authenticating
-            
+
             if (authFile == null) // we are opening existing user's password file
             {
                 String bigSky = "";
                 String encryptedFileName = RC4Cipher(userName, masterPass);
-                
+
                 bigSky = readFromFile(encryptedFileName);
                 //System.out.println("loaded data: "+bigSky);
-                // decrypt raw data from password file
-                String deciphered = byteToString(RC4(hexStringToByteArray(bigSky), hexStringToByteArray(stringToHex(masterPass)))); 
+                // decrypt raw data from password file by running RC4 (symmetric cipher)
+                String deciphered = byteToString(RC4(hexStringToByteArray(bigSky), hexStringToByteArray(stringToHex(masterPass))));
                 //System.out.println("loaded data after RC4 decrypt: "+deciphered);
                 String[] entryLines = deciphered.split(newline);
-                // By Andrew P Ramsey 2013
-                for (int i = 0; i < entryLines.length; ++i)
-                {
+                for (int i = 0; i < entryLines.length; ++i) {
                     String[] rawEntries = entryLines[i].split(delimeter);
+                    //first decrypt the AES encrypted password
+                    String decryptedPassword = decryptAES(rawEntries[4], stringToHex(masterPass), rawEntries[3]);
                     // sname, uname, IV, pass
-                    passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], rawEntries[3]));
+                    passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], decryptedPassword));
+                    //passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], rawEntries[3]));
+                    
+                    deleteButton.setEnabled(true);
+                    updateTextArea();
+                    updatePasswordFile();
+
                 }
-                deleteButton.setEnabled(true);
-                updateTextArea();
-                 updatePasswordFile();
-                
-            } else // we are creating a new file - none yet exists
-            {
-                // new file, therefore nothing to do here
-                // user enters data automatically populated to file
+            }// otherwise, deny access - shutdown program
+            
+        }else {
+                System.exit(0);
             }
-        }// otherwise, deny access - shutdown program
-        else {System.exit(0);}     
     }
-    
     // initComponents() below: 
     //Auto-Generated Code from Java Swing GUI builder 
     @SuppressWarnings("unchecked")
@@ -250,9 +249,10 @@ public class ClamshellUI extends javax.swing.JFrame {
         String bigSky2 = ""; // used to generate raw data for password file output including init vector value to decrypt password values with AES
         for (int i = 0; i < passList.size(); ++i) {
             bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
-            // sname, uname, IV, pass
-            //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV) + newline;
-            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
+            // sname, uname, IV, pass ... encrypt password using AES-256
+            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV) + newline;
+            // non-aes mode below:
+            //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
         }
         jTextPane2.setText(bigSky); 
         jTextPane2.updateUI(); // update jTextField2 (text area)
@@ -432,14 +432,25 @@ public class ClamshellUI extends javax.swing.JFrame {
         {
             key = key.substring(0, 64); // truncate
         }
-        // parse password data into & out of AES 32 hex at a time
-        // first ensure that hex chars are multiple of 32
-        int r = cipher.length() % 32; // r = how many we must pad to end
-        int d = (int) cipher.length() / 32; // s = number of AES rounds required to cycle thru to encipher all plaintext 
+        int r; // remainder of characters need to be padded to end of hex block on plaintext
+        int d; // number of rounds to run AES (number of 32 character blocks)
+        int length = cipher.length();
         
-        for (int i = cipher.length(); i < cipher.length()+r; ++i)
+        if (length < 32)
+        {
+           r = 32 - length;
+           d = 0; // only one round required
+        }
+        else
+        {
+           r = length % 32; // r = how many we must pad to end 
+           d = (int) length / 32; // d = number of AES rounds required to cycle thru to encipher all plaintext 
+        }
+        //System.out.println("len: "+plain.length()+"\n r: "+r+" d: "+d);
+        for (int i = length; i < length+r; ++i)
         {
             cipher += pad;
+            //System.out.println(cipher);
         }
         // now we decipher the padded text
         Yaes aes = new Yaes(key);
@@ -463,6 +474,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         // convert to hexadecimal
         String plain = stringToHex(p);
         String key = stringToHex(k);
+        System.out.println("plain: " + plain + "key: " + key);
         // init vector already in hexadecimal - no need to convert
         String encryptedPass = "";
         // ensure key length to 64 chars hex (64 * 4 = 256)
@@ -479,16 +491,31 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         // parse password data into & out of AES 32 hex at a time
         // first ensure that hex chars are multiple of 32
-        int r = plain.length() % 32; // r = how many we must pad to end
-        int d = (int) plain.length() / 32; // s = number of AES rounds required to cycle thru to encipher all plaintext 
+        int r; // remainder of characters need to be padded to end of hex block on plaintext
+        int d; // number of rounds to run AES (number of 32 character blocks)
+        int length = plain.length();
         
-        for (int i = plain.length(); i < plain.length()+r; ++i)
+        if (length < 32)
+        {
+           r = 32 - length;
+           d = 0; // only one round required
+        }
+        else
+        {
+           r = length % 32; // r = how many we must pad to end 
+           d = (int) length / 32; // d = number of AES rounds required to cycle thru to encipher all plaintext 
+        }
+        //System.out.println("len: "+plain.length()+"\n r: "+r+" d: "+d);
+        for (int i = length; i < length+r; ++i)
         {
             plain += pad;
+            //System.out.println(plain);
         }
+        //System.out.println("ookey booky");
         // now we encipher the padded text
         Yaes aes = new Yaes(key);
-        for (int i = 0; i < d; ++i)
+        
+        for (int i = 0; i < d; ++i) // starts at round one
         {
             encryptedPass += aes.encryptString(plain.substring(i*32, i*32+32), iv);
         }
