@@ -2,51 +2,57 @@ package Interface;
 
 import java.util.Random;
 
-public class Entry{
+public class Entry {
 
-	String sName, uName, pw, IV;
+    String sName, uName, pw, IV;
 
-	public Entry(String s_name, String u_name, String pass){
-		sName = s_name;
-		uName = u_name;
-		pw = pass;
-		IV = "";
-		byte[] bIV = new byte[16];
-		Random rand = new Random();
-		rand.nextBytes(bIV);
-		for(int i = 0; i < bIV.length; i++){
-			IV+=bIV[i];
-		}
-	}
+    public Entry(String s_name, String u_name, String pass) {
+        sName = s_name;
+        uName = u_name;
+        pw = pass;
+        IV = "";
+        byte[] bIV = new byte[16];
+        Random rand = new Random();
+        rand.nextBytes(bIV);
+        IV = getHexString(bIV).toUpperCase();
+    }
 
-	public Entry(String s_name, String u_name, String iv, String pass){
-		sName = s_name;
-		uName = u_name;
-		IV = iv;
-		pw = pass;
-	}
+    public Entry(String s_name, String u_name, String iv, String pass) {
+        sName = s_name;
+        uName = u_name;
+        IV = iv;
+        pw = pass;
+    }
 
-	public void setServiceName(String s_name){
-		sName = s_name;
-	}
+    private String getHexString(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+            result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
 
-	public void setUserName(String u_name){
-		uName = u_name;
-	}
+    public void setServiceName(String s_name) {
+        sName = s_name;
+    }
 
-	public void setPassword(String pass){
-		pw = pass;
-	}
+    public void setUserName(String u_name) {
+        uName = u_name;
+    }
 
-	public String getServiceName(){
-		return sName;
-	}
+    public void setPassword(String pass) {
+        pw = pass;
+    }
 
-	public String getUserName(){
-		return uName;
-	}
+    public String getServiceName() {
+        return sName;
+    }
 
-	public String getPassword(){
-		return pw;
-	}
+    public String getUserName() {
+        return uName;
+    }
+
+    public String getPassword() {
+        return pw;
+    }
 }

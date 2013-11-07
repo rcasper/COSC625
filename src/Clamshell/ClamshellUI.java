@@ -463,11 +463,11 @@ public class ClamshellUI extends javax.swing.JFrame {
         // IV length is already set to 32 chars hex by Entry object
         if (key.length() < 64)
         {
-            while (k.length() < 64){
-                k += pad; // pad with zeros  
+            while (key.length() < 64){
+                key += pad; // pad with zeros  
             }
         }
-        else if (k.length() > 64)
+        else if (key.length() > 64)
         {
             key = key.substring(0, 64); // truncate
         }
@@ -521,11 +521,11 @@ public class ClamshellUI extends javax.swing.JFrame {
         // IV length is already set to 32 chars hex by Entry object
         if (key.length() < 64)
         {
-            while (k.length() < 64){
-                k += pad; // pad with zeros
+            while (key.length() < 64){
+                key += pad; // pad with zeros
             }
         }
-        else if (k.length() > 64)
+        else if (key.length() > 64)
         {
             key = key.substring(0, 64); // truncate
         }
