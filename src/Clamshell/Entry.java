@@ -18,14 +18,14 @@ public class Entry {
         byte[] bIV = new byte[16];
         Random rand = new Random();
         rand.nextBytes(bIV);
-        IV = getHexString(bIV).toUpperCase();
+        IV = getHexString(bIV).toUpperCase().trim();
     }
     
     public Entry(String s_name, String u_name, String iv, String pass) {
-        sName = s_name;
-        uName = u_name;
-        IV = iv;
-        pw = pass;
+        sName = s_name.trim();
+        uName = u_name.trim();
+        IV = iv.trim();
+        pw = pass.trim();
     }
     
     private String getHexString(byte[] b){
