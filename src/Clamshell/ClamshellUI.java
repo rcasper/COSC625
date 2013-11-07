@@ -77,16 +77,21 @@ public class ClamshellUI extends javax.swing.JFrame {
                 String encryptedFileName = RC4Cipher(userName, masterPass);
 
                 bigSky = readFromFile(encryptedFileName);
-                //System.out.println("loaded data: "+bigSky);
+                System.out.println("loaded data: "+bigSky);
                 // decrypt raw data from password file by running RC4 (symmetric cipher)
                 String deciphered = byteToString(RC4(hexStringToByteArray(bigSky), hexStringToByteArray(stringToHex(masterPass))));
-                //System.out.println("loaded data after RC4 decrypt: "+deciphered);
+                System.out.println("loaded data after RC4 decrypt: "+deciphered);
                 String[] entryLines = deciphered.split(newline);
+                System.out.println("#lines of data in file: "+entryLines.length);
                 for (int i = 0; i < entryLines.length; ++i) {
-                    String[] rawEntries = entryLines[i].split(delimeter);
+                    String[] rawEntries = entryLines[i].split(delimeter); // further break down 2D array
+                    System.out.println("#entries total: "+rawEntries.length);
                     //first decrypt the AES encrypted password
-                    String decryptedPassword = decryptAES(rawEntries[4], stringToHex(masterPass), rawEntries[3]);
+                    //ciphertext, key, IV
+                    System.out.println("AES Vars: "+rawEntries[4] + " " + stringToHex(masterPass) + " " + rawEntries[3]);
+                    String decryptedPassword = decryptAES(rawEntries[4], stringToHex(masterPass), rawEntries[3]);//**********************************************************************
                     // sname, uname, IV, pass
+                    System.out.println("Entry Data: "+rawEntries[0] + " " + rawEntries[1] + " " +  rawEntries[2] + " " +  decryptedPassword);
                     passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], decryptedPassword));
                     //passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], rawEntries[3]));
                     
@@ -101,6 +106,8 @@ public class ClamshellUI extends javax.swing.JFrame {
                 System.exit(0);
             }
     }
+    
+    
     // initComponents() below: 
     //Auto-Generated Code from Java Swing GUI builder 
     @SuppressWarnings("unchecked")
@@ -115,6 +122,8 @@ public class ClamshellUI extends javax.swing.JFrame {
         pass = new javax.swing.JTextField();
         addButton = new javax.swing.JButton();
         deleteButton = new javax.swing.JButton();
+        slider = new javax.swing.JSlider();
+        RERC4 = new javax.swing.JButton();
 
         javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
         jDialog1.getContentPane().setLayout(jDialog1Layout);
@@ -165,24 +174,40 @@ public class ClamshellUI extends javax.swing.JFrame {
             }
         });
 
+        slider.setMaximum(0);
+        slider.setPaintTicks(true);
+        slider.setSnapToTicks(true);
+        slider.setToolTipText("Adjust to go thru entry objects");
+        slider.setName(""); // NOI18N
+
+        RERC4.setLabel("Re-RC4");
+        RERC4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                RERC4ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(sname, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
+                    .addComponent(RERC4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(sname, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(uname, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(pass, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(addButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 40, Short.MAX_VALUE)
-                        .addComponent(deleteButton, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addComponent(deleteButton, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(slider, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -195,11 +220,43 @@ public class ClamshellUI extends javax.swing.JFrame {
                     .addComponent(addButton)
                     .addComponent(deleteButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 218, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 170, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(RERC4)
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(slider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
+
+        RERC4.getAccessibleContext().setAccessibleName("rerc4");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+    //DO NO TOUCH ABOVE
+    
+    
+    /**
+     * Update the text area field when passList is updated
+     */
+    private void updateTextArea() {
+        String bigSky = "";
+        String bigSky2 = ""; // used to generate raw data for password file output including init vector value to decrypt password values with AES
+        for (int i = 0; i < passList.size(); ++i) {
+            bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
+            // sname, uname, IV, pass ... encrypt password using AES-256
+            String encryptedPass = encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV);
+            System.out.println(encryptedPass);
+            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptedPass + newline;
+            // non-aes mode below:
+            //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
+        }
+        jTextPane2.setText(bigSky); 
+        jTextPane2.updateUI(); // update jTextField2 (text area)
+        
+        writeHelper = RC4Cipher(bigSky2, masterPass); // encrypt using RC4 for writing to File
+        //System.out.println("output to file: "+writeHelper);
+    }
     
     /**
      * Remove entry from text area based on the user input (number provided)
@@ -240,27 +297,7 @@ public class ClamshellUI extends javax.swing.JFrame {
            deleteButton.setEnabled(false);
        }
     }//GEN-LAST:event_deleteButtonActionPerformed
-    
-    /**
-     * Update the text area field when passList is updated
-     */
-    private void updateTextArea() {
-        String bigSky = "";
-        String bigSky2 = ""; // used to generate raw data for password file output including init vector value to decrypt password values with AES
-        for (int i = 0; i < passList.size(); ++i) {
-            bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
-            // sname, uname, IV, pass ... encrypt password using AES-256
-            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV) + newline;
-            // non-aes mode below:
-            //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
-        }
-        jTextPane2.setText(bigSky); 
-        jTextPane2.updateUI(); // update jTextField2 (text area)
         
-        writeHelper = RC4Cipher(bigSky2, masterPass); // encrypt using RC4 for writing to File
-        //System.out.println("output to file: "+writeHelper);
-    }
-    
     /**
      * Write RC4-encrypted entry data to file
      */
@@ -355,6 +392,10 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         
     }//GEN-LAST:event_addButtonActionPerformed
+
+    private void RERC4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RERC4ActionPerformed
+        
+    }//GEN-LAST:event_RERC4ActionPerformed
         
     /**
      * Convert user name input to RC4-encrypted string
@@ -415,10 +456,8 @@ public class ClamshellUI extends javax.swing.JFrame {
     private String decryptAES(String cipher, String k, String iv)
     {
         // no need to convert to hexadecimal - input text is already hexadecimal
-        //cipher = byteArrayToHexString(cipher.getBytes());
-        String key = stringToHex(k);
         // init vector already in hexadecimal - no need to convert
-        
+        String key = stringToHex(k);
         String decryptedPass = ""; // what we return from method
         // ensure key length to 64 chars hex
         // IV length is already set to 32 chars hex by Entry object
@@ -446,11 +485,11 @@ public class ClamshellUI extends javax.swing.JFrame {
            r = length % 32; // r = how many we must pad to end 
            d = (int) length / 32; // d = number of AES rounds required to cycle thru to encipher all plaintext 
         }
-        //System.out.println("len: "+plain.length()+"\n r: "+r+" d: "+d);
+        System.out.println("len: "+cipher.length()+"\n r: "+r+" d: "+d);
         for (int i = length; i < length+r; ++i)
         {
             cipher += pad;
-            //System.out.println(cipher);
+            System.out.println(cipher);
         }
         // now we decipher the padded text
         Yaes aes = new Yaes(key);
@@ -560,12 +599,14 @@ public class ClamshellUI extends javax.swing.JFrame {
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton RERC4;
     private javax.swing.JButton addButton;
     private javax.swing.JButton deleteButton;
     private javax.swing.JDialog jDialog1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextPane jTextPane2;
     private javax.swing.JTextField pass;
+    private javax.swing.JSlider slider;
     private javax.swing.JTextField sname;
     private javax.swing.JTextField uname;
     // End of variables declaration//GEN-END:variables
