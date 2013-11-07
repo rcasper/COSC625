@@ -471,6 +471,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         {
             key = key.substring(0, 64); // truncate
         }
+        //pad the ciphertext if not multiple of 32
         int r; // remainder of characters need to be padded to end of hex block on plaintext
         int d; // number of rounds to run AES (number of 32 character blocks)
         int length = cipher.length();
