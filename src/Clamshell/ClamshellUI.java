@@ -88,11 +88,11 @@ public class ClamshellUI extends javax.swing.JFrame {
                     System.out.println("#entries total: "+rawEntries.length);
                     //first decrypt the AES encrypted password
                     //ciphertext, key, IV
-                    System.out.println("AES Vars: "+rawEntries[4] + " " + stringToHex(masterPass) + " " + rawEntries[3]);
-                    String decryptedPassword = decryptAES(rawEntries[4], stringToHex(masterPass), rawEntries[3]);//**********************************************************************
+                    System.out.println("AES Vars: "+rawEntries[3] + " " + stringToHex(masterPass) + " " + rawEntries[3]);
+                    //String decryptedPassword = decryptAES(rawEntries[3], masterPass, rawEntries[2]);//**********************************************************************
                     // sname, uname, IV, pass
-                    System.out.println("Entry Data: "+rawEntries[0] + " " + rawEntries[1] + " " +  rawEntries[2] + " " +  decryptedPassword);
-                    passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], decryptedPassword));
+                    //System.out.println("Entry Data: "+rawEntries[0] + " " + rawEntries[1] + " " +  rawEntries[2] + " " +  decryptedPassword);
+                    passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], rawEntries[3]));
                     //passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2], rawEntries[3]));
                     
                     deleteButton.setEnabled(true);
@@ -243,11 +243,11 @@ public class ClamshellUI extends javax.swing.JFrame {
         String bigSky = "";
         String bigSky2 = ""; // used to generate raw data for password file output including init vector value to decrypt password values with AES
         for (int i = 0; i < passList.size(); ++i) {
-            bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
+            bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + decryptAES(passList.get(i).getPassword(), masterPass, passList.get(i).IV) + newline;
             // sname, uname, IV, pass ... encrypt password using AES-256
-            String encryptedPass = encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV);
-            System.out.println(encryptedPass);
-            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + encryptedPass + newline;
+            //String encryptedPass = encryptAES(passList.get(i).getPassword(),masterPass,passList.get(i).IV);
+            //System.out.println(encryptedPass);
+            bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
             // non-aes mode below:
             //bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).IV + delimeter + passList.get(i).getPassword() + newline;
         }
@@ -373,8 +373,10 @@ public class ClamshellUI extends javax.swing.JFrame {
         {
             pss = placeholder;
         }
+        Entry n = new Entry(sn, un, pss);
+        n.setPassword(encryptAES(pss, masterPass, n.IV));
+        passList.add(n);
         
-        passList.add(new Entry(sn, un, pss));
         updateTextArea();
         updatePasswordFile();
         
@@ -476,10 +478,10 @@ public class ClamshellUI extends javax.swing.JFrame {
         int d; // number of rounds to run AES (number of 32 character blocks)
         int length = cipher.length();
         
-        if (length < 32)
+        if (length <= 32)
         {
            r = 32 - length;
-           d = 0; // only one round required
+           d = 1; // only one round required
         }
         else
         {
@@ -538,7 +540,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         if (length < 32)
         {
            r = 32 - length;
-           d = 0; // only one round required
+           d = 1; // only one round required
         }
         else
         {
