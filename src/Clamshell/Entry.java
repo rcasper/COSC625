@@ -1,40 +1,41 @@
 package Clamshell;
 
-import java.util.Random;
+//import java.util.Random;
 /**
  * Entry object for storing secure password information
  * COSC 625 Fall 2013
- * @author Andrew Ramsey
  * @author Ryan Kasprzyk
  */
 public class Entry {
     
-    public String sName, uName, pw, IV;
+    public String sName, uName, pw; //IV;
 
     public Entry(String s_name, String u_name, String pass) {
         sName = s_name;
         uName = u_name;
         pw = pass;
+        /*
         byte[] bIV = new byte[16];
         Random rand = new Random();
         rand.nextBytes(bIV);
         IV = getHexString(bIV).toUpperCase().trim();
+        */
     }
     
-    public Entry(String s_name, String u_name, String iv, String pass) {
+    /*public Entry(String s_name, String u_name, String iv, String pass) {
         sName = s_name.trim();
         uName = u_name.trim();
-        IV = iv.trim();
+        //IV = iv.trim();
         pw = pass.trim();
-    }
+    }*/
     
-    private String getHexString(byte[] b){
+    /*private String getHexString(byte[] b){
         String result = "";
         for (int i = 0; i < b.length; i++) {
             result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
         }
         return result;
-    }
+    }*/
 
     public void setServiceName(String s_name) {
         sName = s_name;

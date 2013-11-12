@@ -157,6 +157,7 @@ public class Yaes {
         0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb};
     
     private String key;
+    //private int[] lastKey;
     
     /**
      * YAES class constructor.
@@ -179,6 +180,7 @@ public class Yaes {
         int numRounds = 14; //256 bit mode
         int[][] state, initvector = new int[4][4];
         int[][] keymatrix = keySchedule(key);
+        
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 initvector[j][i] = Integer.parseInt(IV.substring((8 * i) + (2 * j), (8 * i) + (2 * j + 2)), 16);
@@ -216,6 +218,8 @@ public class Yaes {
         int numRounds = 14;
         int[][] state, initvector = new int[4][4];
         int[][] keymatrix = keySchedule(key);
+        //lastKey = keymatrix[13];
+        
         for (int i = 0; i < 4; i++) { // parse init vector into 4x4 matrix as integer values
             for (int j = 0; j < 4; j++) { // number 16 represents hexadecimal base value of 16 
                 initvector[j][i] = Integer.parseInt(IV.substring((8 * i) + (2 * j), (8 * i) + (2 * j + 2)), 16);
