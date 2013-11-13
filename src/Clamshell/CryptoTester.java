@@ -1,17 +1,20 @@
 package Clamshell;
 
 public class CryptoTester {
-
-    private static final String delimeter = "   "; // entry data delimeter
+        
+    //private static AES aes = new AES("F1C391E72531812FF1C391E72531812F");
     
     public static void main(String argv[])
     {
-        System.out.println(byteToString(hexStringToByteArray("616161616161afd16161616161616161")));
+        String plain = byteToString(hexStringToByteArray("616161616161afd16161616100000000"));
+        System.out.println(plain);
         AES aes = new AES("F1C391E72531812FF1C391E72531812F");
-        String enc = aes.encrypt("616161616161afd16161616161616161");
+        AES aes2 = new AES("F1C391E72531812FF1C391E72531812F");
+        String enc = aes.encrypt("616161616161afd16161616100000000");
         String dec = aes.decrypt(enc);
-        
+        String dec2 = aes2.decrypt(enc);
         System.out.println(byteToString(hexStringToByteArray(dec)));
+        System.out.println(byteToString(hexStringToByteArray(dec2)));
         /*
         String masterPass = "7061737300000000706173730000000070617373000000007061737300000000";
         String cipher = "";

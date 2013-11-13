@@ -13,7 +13,7 @@ public class AES {
     private String key, plaintext;
     private final int p = 2;
     private int[] zeros = {0,0,0,0,0,0,0,0};
-    private int[] m = {1,0,0,0,1,1,0,1,1}; // stringToIntArray("100011011");
+    private int[] m = {1,0,0,0,1,1,0,1,1};
     private String[][] state, keystate;
     private int[] rcConst = {1};
     private String[][][] keyExpansion;
@@ -32,7 +32,7 @@ public class AES {
         formState2(); // form state into 4x4 matrix
         String[][] aesState = addRoundKey(state, keyExpansion[0]);  
         //generateAesMatrix();
-        keyExpansion();
+        //keyExpansion();
         //System.out.println("Encryption:");
         for (int i = 1; i <= 10; ++i) {
             aesState = sbox(aesState);
@@ -78,7 +78,7 @@ public class AES {
                 outp += decryptedText[i][j];
             }
         }
-        //System.out.println("decryption output as hex: "+outp);
+        System.out.println("^*^%&% decryption output as hex: "+outp);
         return outp;
     }
     

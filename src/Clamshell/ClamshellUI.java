@@ -18,12 +18,12 @@ public class ClamshellUI extends javax.swing.JFrame {
     // default designations for delimeters and padding
     private final String delimeter = "   "; // entry data delimeter
     private final String newline = "\n";
-    private final String pad = "0";
-    private final String placeholder = "placeholder"; // placeholder represents blank fields inside entry object when encrypted to file
+    private final String pad = "a";
+    private final String placeholder = "placeholderrrrrr"; // placeholder represents blank fields inside entry object when encrypted to file
     private final Charset charset = Charset.forName("UTF-8");
     private final int keylength = 32;
     
-    // values for length of key and plaintext in hex (256 vs 128 bit AES) ... 256: k = 64 pt = 32 iv = 32  128: k = 32 pt = 32
+    // values for length of key and plaintext in hex (256 vs 128 bit AES) ... 256: k = 64 pt = 32 iv = 32 128: k = 32 pt = 32
     
     // the values passed in from initial UI window (authentication procedure)
     private File authFile;
