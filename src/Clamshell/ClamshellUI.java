@@ -375,6 +375,9 @@ public class ClamshellUI extends javax.swing.JFrame {
     }//GEN-LAST:event_addButtonActionPerformed
     
     private void editEntryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryButtonActionPerformed
+        EditEntryDialog editor = new EditEntryDialog(passList.size()); // we pass number of entries to new Form so it knows the limit to set on spinner field
+        editor.setVisible(true);
+        
         
     }//GEN-LAST:event_editEntryButtonActionPerformed
         
