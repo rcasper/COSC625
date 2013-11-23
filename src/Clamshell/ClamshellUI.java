@@ -22,6 +22,7 @@ public class ClamshellUI extends javax.swing.JFrame {
     private final String placeholder = "placeholder"; // placeholder represents blank fields inside entry object when encrypted to file
     private final Charset charset = Charset.forName("UTF-8");
     private final int keylength = 32;
+    private final String passConditions = " with at least some characters.";
     
     // values for length of key and plaintext in hex (256 vs 128 bit AES) ... 256: k = 64 pt = 32 iv = 32 128: k = 32 pt = 32
     
@@ -73,7 +74,7 @@ public class ClamshellUI extends javax.swing.JFrame {
             masterPass = dialog.getMasterPass();
             isAuthenticated = dialog.getAuthenticated();
             dialog.dispose(); // we are done authenticating
-
+            
             if (authFile == null) // we are opening existing user's password file
             {
                 String bigSky = "";
@@ -87,6 +88,7 @@ public class ClamshellUI extends javax.swing.JFrame {
                 String[] entryLines = deciphered.split(newline);
                 System.out.println("#lines of data in file: "+entryLines.length);
                 for (int i = 0; i < entryLines.length; ++i) {
+                    
                     String[] rawEntries = entryLines[i].split(delimeter); // further break down 2D array
                     System.out.println("#entries total: "+rawEntries.length);
                     //first decrypt the AES encrypted password
@@ -96,7 +98,7 @@ public class ClamshellUI extends javax.swing.JFrame {
                     deleteButton.setEnabled(true);
                     updateTextArea();
                     updatePasswordFile();
-
+                    
                 }
             }// otherwise, deny access - shutdown program
             
@@ -133,6 +135,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Password Manager Beta");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setIconImages(null);
         setMinimumSize(new java.awt.Dimension(554, 255));
@@ -218,7 +221,11 @@ public class ClamshellUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-
+    public boolean setSomething()
+    {
+        return true;
+    }
+    
     /**
      * Update the text area field when passList is updated
      */
@@ -243,8 +250,8 @@ public class ClamshellUI extends javax.swing.JFrame {
        
        if (!passList.isEmpty())
        {   
-            try{
-                int entryNumber = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter Entry Number:", "Delete Entry?", JOptionPane.QUESTION_MESSAGE));
+            try {
+                int entryNumber = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter Entry Number:", "Delete Entry?", JOptionPane.OK_OPTION));
                 
                 if (entryNumber >= 0 && entryNumber < passList.size())
                 {
@@ -255,7 +262,8 @@ public class ClamshellUI extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
-            catch(Exception e){
+            catch(Exception e)
+            {    
                 JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
             }
             if (passList.isEmpty()) // ensure turn off button for case user deleted last entry and there are no entries left
@@ -375,10 +383,50 @@ public class ClamshellUI extends javax.swing.JFrame {
     }//GEN-LAST:event_addButtonActionPerformed
     
     private void editEntryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryButtonActionPerformed
-        EditEntryDialog editor = new EditEntryDialog(passList.size()); // we pass number of entries to new Form so it knows the limit to set on spinner field
-        editor.setVisible(true);
+        
+        int entryNum;
+        
+        try {
+            entryNum = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter Entry Number:", "0", JOptionPane.OK_CANCEL_OPTION));
+            
+            if (entryNum >= 0 && entryNum < passList.size())
+            {
+                String password = JOptionPane.showInputDialog(null, "Enter New Password:", "Change Password", JOptionPane.OK_CANCEL_OPTION);
+                
+                if (!password.isEmpty()) {
+                    
+                    Entry temper = passList.get(entryNum);
+                    String sName = temper.sName;
+                    String uName = temper.uName;
+                    temper = new Entry(sName, uName, encryptAES(password, masterPass));
+                    
+                    passList.set(entryNum, temper);
+                    
+                    if (!passList.isEmpty()) {
+                        deleteButton.setEnabled(true); // now we can delete entries
+                    } else {
+                        deleteButton.setEnabled(false);
+                    }
+                }
+                else
+                {
+                    JOptionPane.showMessageDialog(null, "Password Entry Is Empty", "Please Input Password " + passConditions, JOptionPane.ERROR_MESSAGE);
+                }
+                
+            }
+            else
+            {
+                JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        catch (Exception e)
+        {
+            JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
+        }
         
         
+        updateTextArea();
+        updatePasswordFile();
     }//GEN-LAST:event_editEntryButtonActionPerformed
         
     /**
