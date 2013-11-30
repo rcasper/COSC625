@@ -8,7 +8,7 @@ import java.util.ArrayList;
  * Main UI for secure password management application
  * COSC 625 Fall 2013
  * @author Andrew Ramsey
- * @version 1.8
+ * @version 2.0
  */
 public class ClamshellUI extends javax.swing.JFrame {
     
@@ -22,7 +22,6 @@ public class ClamshellUI extends javax.swing.JFrame {
     private final String placeholder = "placeholder"; // placeholder represents blank fields inside entry object when encrypted to file
     private final Charset charset = Charset.forName("UTF-8");
     private final int keylength = 32;
-    private final String passConditions = " with at least some characters.";
     
     // values for length of key and plaintext in hex (256 vs 128 bit AES) ... 256: k = 64 pt = 32 iv = 32 128: k = 32 pt = 32
     
@@ -387,11 +386,11 @@ public class ClamshellUI extends javax.swing.JFrame {
         int entryNum;
         
         try {
-            entryNum = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter Entry Number:", "0", JOptionPane.OK_CANCEL_OPTION));
+            entryNum = Integer.parseInt(JOptionPane.showInputDialog(null, "Input Entry Number:", "Edit Entry", JOptionPane.QUESTION_MESSAGE));
             
             if (entryNum >= 0 && entryNum < passList.size())
             {
-                String password = JOptionPane.showInputDialog(null, "Enter New Password:", "Change Password", JOptionPane.OK_CANCEL_OPTION);
+                String password = JOptionPane.showInputDialog(null, "Enter New Password:", "Change Password", JOptionPane.QUESTION_MESSAGE);
                 
                 if (!password.isEmpty()) {
                     
@@ -410,13 +409,14 @@ public class ClamshellUI extends javax.swing.JFrame {
                 }
                 else
                 {
-                    JOptionPane.showMessageDialog(null, "Password Entry Is Empty", "Please Input Password " + passConditions, JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Password Entry Is Empty", "Invalid Input ", JOptionPane.ERROR_MESSAGE);
                 }
                 
             }
             else
             {
                 JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
+                //JOptionPane.showMessageDialog(null, "Password Entry Is Empty", "Please Input Password ", JOptionPane.ERROR_MESSAGE);
             }
         }
         catch (Exception e)
