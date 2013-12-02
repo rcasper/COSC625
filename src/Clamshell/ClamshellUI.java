@@ -4,52 +4,51 @@ import java.io.*;
 import java.nio.charset.*;
 import javax.swing.*;
 import java.util.ArrayList;
+
 /**
- * Main UI for secure password management application
- * COSC 625 Fall 2013
+ * Main UI for secure password management application COSC 625 Fall 2013
+ *
  * @author Andrew Ramsey
  * @version 2.0
  */
 public class ClamshellUI extends javax.swing.JFrame {
-    
+
     private ArrayList<Entry> passList; // must specify Entry type object
     private String writeHelper = "";
-    
     // default designations for delimeters and padding
     private final String delimeter = "   "; // entry data delimeter
     private final String newline = "\n";
-    private final String pad = "a";
+    private final String pad = "20";
     private final String placeholder = "placeholder"; // placeholder represents blank fields inside entry object when encrypted to file
     private final Charset charset = Charset.forName("UTF-8");
     private final int keylength = 32;
-    
     // values for length of key and plaintext in hex (256 vs 128 bit AES) ... 256: k = 64 pt = 32 iv = 32 128: k = 32 pt = 32
-    
     // the values passed in from initial UI window (authentication procedure)
     private File authFile;
     private String userName;
     private String masterPass;
     private boolean isAuthenticated = false;
-    
+
     /**
      * Beginning insertion point of program
+     *
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        
+
         ClamshellUI clam = new ClamshellUI();
         clam.setLocationRelativeTo(null); // center window in middle of screen
-        
-        if (clam.isAuthenticated == true)
-        {
+
+        if (clam.isAuthenticated == true) {
             clam.setVisible(true);
-        } else { System.exit(0); }
+        } else {
+            System.exit(0);
+        }
     }
-    
+
     /**
-     * UI constructor
-     * Provides authentication and loads entry objects
-     * Then create ClamshellUI and perform crypto IO
+     * UI constructor Provides authentication and loads entry objects Then
+     * create ClamshellUI and perform crypto IO
      */
     public ClamshellUI() {
         initComponents();
@@ -73,39 +72,34 @@ public class ClamshellUI extends javax.swing.JFrame {
             masterPass = dialog.getMasterPass();
             isAuthenticated = dialog.getAuthenticated();
             dialog.dispose(); // we are done authenticating
-            
+
             if (authFile == null) // we are opening existing user's password file
             {
                 String bigSky = "";
                 String encryptedFileName = RC4Cipher(userName, masterPass);
                 bigSky = readFromFile(encryptedFileName);
-                System.out.println("loaded data rom file (raw): "+bigSky);
                 // decrypt raw data from password file by running RC4 (symmetric cipher)
                 String deciphered = byteToString(RC4(hexStringToByteArray(bigSky), hexStringToByteArray(stringToHex(masterPass))));
                 //String deciphered = bigSky;
-                System.out.println("loaded data after RC4 decrypt: "+deciphered);
                 String[] entryLines = deciphered.split(newline);
-                System.out.println("#lines of data in file: "+entryLines.length);
                 for (int i = 0; i < entryLines.length; ++i) {
-                    
+
                     String[] rawEntries = entryLines[i].split(delimeter); // further break down 2D array
-                    System.out.println("#entries total: "+rawEntries.length);
                     //first decrypt the AES encrypted password
                     //ciphertext, key, IV
-                    System.out.println("Master Password: "+stringToHex(masterPass)+ "\n**Decrypted Password File\n" + "\nAES data: " + rawEntries[2] + "  length:" + rawEntries[2].length());
                     passList.add(new Entry(rawEntries[0], rawEntries[1], rawEntries[2]));
                     deleteButton.setEnabled(true);
                     updateTextArea();
                     updatePasswordFile();
-                    
+
                 }
             }// otherwise, deny access - shutdown program
-            
-        }else {
-                System.exit(0);
-            }
+
+        } else {
+            System.exit(0);
+        }
     }
-    
+
     // initComponents() below: 
     //Auto-Generated Code from Java Swing GUI builder 
     @SuppressWarnings("unchecked")
@@ -220,11 +214,10 @@ public class ClamshellUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public boolean setSomething()
-    {
+    public boolean setSomething() {
         return true;
     }
-    
+
     /**
      * Update the text area field when passList is updated
      */
@@ -232,83 +225,73 @@ public class ClamshellUI extends javax.swing.JFrame {
         String bigSky = "";
         String bigSky2 = ""; // used to generate raw data for password file output including init vector value to decrypt password values with AES
         for (int i = 0; i < passList.size(); ++i) {
-            bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + decryptAES(passList.get(i).getPassword(),masterPass) + newline;
+            bigSky += i + delimeter + passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + decryptAES(passList.get(i).getPassword(), masterPass) + newline;
             bigSky2 += passList.get(i).getServiceName() + delimeter + passList.get(i).getUserName() + delimeter + passList.get(i).getPassword() + newline;
         }
-        jTextPane2.setText(bigSky); 
+        jTextPane2.setText(bigSky);
         jTextPane2.updateUI(); // update jTextField2 (text area)
         writeHelper = RC4Cipher(bigSky2, masterPass); // encrypt using RC4 for writing to File
-        //System.out.println("output to file: "+writeHelper);
     }
-    
+
     /**
      * Remove entry from text area based on the user input (number provided)
-     * @param evt 
+     *
+     * @param evt
      */
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
-       
-       if (!passList.isEmpty())
-       {   
+
+        if (!passList.isEmpty()) {
             try {
                 int entryNumber = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter Entry Number:", "Delete Entry?", JOptionPane.OK_OPTION));
-                
-                if (entryNumber >= 0 && entryNumber < passList.size())
-                {
-                    passList.remove((int)entryNumber); // delete entry from flexible object type (arraylist)
-                }
-                else
-                {
+
+                if (entryNumber >= 0 && entryNumber < passList.size()) {
+                    passList.remove((int) entryNumber); // delete entry from flexible object type (arraylist)
+                } else {
                     JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            }
-            catch(Exception e)
-            {    
+            } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
             }
             if (passList.isEmpty()) // ensure turn off button for case user deleted last entry and there are no entries left
             {
                 deleteButton.setEnabled(false);
-            }
-            else
-            {
+            } else {
                 deleteButton.setEnabled(true);
             }
             updateTextArea();
             updatePasswordFile();
-       }
-       else
-       {
-           deleteButton.setEnabled(false);
-       }
+        } else {
+            deleteButton.setEnabled(false);
+        }
     }//GEN-LAST:event_deleteButtonActionPerformed
-        
+
     /**
      * Write RC4-encrypted entry data to file
      */
     private void updatePasswordFile() {
-        
+
         if (authFile == null) {
             //String encryptedFileName = RC4Cipher(userName, masterPass);
             authFile = new File(RC4Cipher(userName, masterPass));
         }
         try {
-        writeToFile();
-        }catch (Exception e) {
+            writeToFile();
+        } catch (Exception e) {
             System.exit(66);
         }
     }
-    
+
     public void writeToFile() throws IOException {
-    OutputStream out = new FileOutputStream(authFile);
-    Closeable stream = out;
-    try {
-      Writer writer = new OutputStreamWriter(out, charset);
-      stream = writer;
-      writer.write(writeHelper);
-    } finally {
-      stream.close();
+        OutputStream out = new FileOutputStream(authFile);
+        Closeable stream = out;
+        try {
+            Writer writer = new OutputStreamWriter(out, charset);
+            stream = writer;
+            writer.write(writeHelper);
+        } finally {
+            stream.close();
+        }
     }
-  }
 
     public String readFromFile(String file) {
 
@@ -333,111 +316,103 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         return null;
     }
-    
+
     /**
-     * Add Entry From three inputs on Clamshell UI
-     * Then update passList, UI
-     * @param evt 
+     * Add Entry From three inputs on Clamshell UI Then update passList, UI
+     *
+     * @param evt
      */
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
-        
+
         String sn = sname.getText().trim();
         String un = uname.getText().trim();
         String pss = pass.getText().trim(); //String m = encryptAES(pss, masterPass); // cipher, key
         // create placeholder variables so that when decrypted, so that delimeters are not skipped
-        if (sn.isEmpty()) 
-        {
+        if (sn.isEmpty()) {
             sn = placeholder;
         }
-        if (un.isEmpty())
-        {
+        if (un.isEmpty()) {
             un = placeholder;
         }
-        if (pss.isEmpty())
-        {
+        if (pss.isEmpty()) {
             pss = placeholder;
         }
         // add new entry to passList
-        System.out.println("Password pre-AES: "+pss);
-        System.out.println("\nPassword pre-AES as hex: "+stringToHex(pss));
         Entry newentry = new Entry(sn, un, encryptAES(pss, masterPass)); //store password encrypted in system
-        passList.add(newentry);
-        System.out.println("\nPassword after-AES: "+newentry.getPassword());
+        int i = 0;
+        if (passList.isEmpty()) {
+            passList.add(newentry);
+        } else {
+            while (newentry.getServiceName().compareToIgnoreCase(passList.get(i).getServiceName()) > 0 && i < passList.size()) {
+                i++;
+            }
+            passList.add(i, newentry);
+        }
         updateTextArea();
         updatePasswordFile();
-        
+
         sname.setText(""); // reset UI fields
         uname.setText("");
         pass.setText("");
-        
-        if (!passList.isEmpty())
-        {
+
+        if (!passList.isEmpty()) {
             deleteButton.setEnabled(true); // now we can delete entries
+        } else {
+            deleteButton.setEnabled(false);
         }
-        else
-        {
-            deleteButton.setEnabled(false); 
-        }
-        
+
     }//GEN-LAST:event_addButtonActionPerformed
-    
+
     private void editEntryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryButtonActionPerformed
-        
+
         int entryNum;
-        
+
         try {
             entryNum = Integer.parseInt(JOptionPane.showInputDialog(null, "Input Entry Number:", "Edit Entry", JOptionPane.QUESTION_MESSAGE));
-            
-            if (entryNum >= 0 && entryNum < passList.size())
-            {
+
+            if (entryNum >= 0 && entryNum < passList.size()) {
                 String password = JOptionPane.showInputDialog(null, "Enter New Password:", "Change Password", JOptionPane.QUESTION_MESSAGE);
-                
+
                 if (!password.isEmpty()) {
-                    
+
                     Entry temper = passList.get(entryNum);
-                    String sName = temper.sName;
-                    String uName = temper.uName;
+                    String sName = temper.getServiceName();
+                    String uName = temper.getUserName();
                     temper = new Entry(sName, uName, encryptAES(password, masterPass));
-                    
+
                     passList.set(entryNum, temper);
-                    
+
                     if (!passList.isEmpty()) {
                         deleteButton.setEnabled(true); // now we can delete entries
                     } else {
                         deleteButton.setEnabled(false);
                     }
-                }
-                else
-                {
+                } else {
                     JOptionPane.showMessageDialog(null, "Password Entry Is Empty", "Invalid Input ", JOptionPane.ERROR_MESSAGE);
                 }
-                
-            }
-            else
-            {
+
+            } else {
                 JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
                 //JOptionPane.showMessageDialog(null, "Password Entry Is Empty", "Please Input Password ", JOptionPane.ERROR_MESSAGE);
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Entry Number Out of Bounds", "Error", JOptionPane.ERROR_MESSAGE);
         }
-        
-        
+
+
         updateTextArea();
         updatePasswordFile();
     }//GEN-LAST:event_editEntryButtonActionPerformed
-        
+
     /**
      * Convert user name input to RC4-encrypted string
-     * @return 
+     *
+     * @return
      */
-    private String RC4Cipher(String plain, String key)
-    {
+    private String RC4Cipher(String plain, String key) {
         return byteArrayToHexString(RC4(hexStringToByteArray(stringToHex(plain)), hexStringToByteArray(stringToHex(key))));
     }
-    
+
     /**
      * RC4 Cipher in Bytes
      *
@@ -477,92 +452,74 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         return ciphertext;
     }
-    
+
     /**
      * Decrypt ciphertext password
+     *
      * @param cipher - plaintext in hexadecimal
      * @param k - key as plain text
      * @return String
      */
-    private String decryptAES(String cipher, String k)
-    {
+    private String decryptAES(String cipher, String k) {
         // no need to convert to hexadecimal - input text is already hexadecimal
         // init vector already in hexadecimal - no need to convert
         String key = stringToHex(k);
         String decryptedPass = ""; // what we return from method
         // ensure key length to 64 chars hex
-        if (key.length() < keylength)
-        {
-            while (key.length() < keylength){
+        if (key.length() < keylength) {
+            while (key.length() < keylength) {
                 key += pad; // pad with zeros  
             }
-        }
-        else if (key.length() > keylength)
-        {
+        } else if (key.length() > keylength) {
             key = key.substring(0, keylength); // truncate
         }
         // now we decipher the padded text        
         int r; // remainder of characters need to be padded to end of hex block on plaintext
         int d; // number of rounds to run AES (number of 32 character blocks)
         int length = cipher.length();
-        
-        if (length < 32)
-        {
-           r = 32 - length;
-           d = 1; // only one round required
+
+        if (length < 32) {
+            r = 32 - length;
+            d = 1; // only one round required
+        } else {
+            r = length % 32; // r = how many we must pad to end 
+            d = (int) length / 32; // d = number of AES rounds required to cycle thru to encipher all plaintext 
         }
-        else
-        {
-           r = length % 32; // r = how many we must pad to end 
-           d = (int) length / 32; // d = number of AES rounds required to cycle thru to encipher all plaintext 
-        }
-        //System.out.println("len: "+plain.length()+"\n r: "+r+" d: "+d);
-        for (int i = length; i < length+r; ++i)
-        {
+
+        for (int i = length; i < length + r; ++i) {
             cipher += pad;
-            //System.out.println(plain);
+
         }
-        System.out.println("Decryption\nplaintext: " + cipher + " " + cipher.length() + "\nkey: " + key + " " + key.length() + "\n");
+
         AES aes = new AES(key);
-        for (int i = 0; i < d; ++i)
-        {
-            decryptedPass += aes.decrypt(cipher.substring(i*32, i*32+32));
-            //System.out.println(decryptedPass);
+        for (int i = 0; i < d; ++i) {
+            decryptedPass += aes.decrypt(cipher.substring(i * 32, i * 32 + 32));
         }// we are handed back 32 char hex string from AES 128 decryption
         // convert it back to plaintext
-        System.out.println("ciphertext input as hex: "+cipher);
-        //System.out.println("IV: " + iv);
-        System.out.println("decrypted output as hex: " + decryptedPass);
-        System.out.println("decrypted output as plain: " + byteToString(hexStringToByteArray(decryptedPass)));
-        System.out.println("end decryption-------------------------------------------------------------------------------------\n");
         aes = null;
         return byteToString(hexStringToByteArray(decryptedPass));
     }
-    
+
     /**
      * Encrypt using AES 256
+     *
      * @param plain - plaintext as plain text
      * @param k - key as plain text
      * @return String - encrypted text as hexadecimal
      */
-    private String encryptAES(String p, String k)
-    {
+    private String encryptAES(String p, String k) {
         // convert to hexadecimal
         String plain = stringToHex(p);
         String key = stringToHex(k);
-        //System.out.println("plaintext: " + plain + " " + plain.length() + "\nkey: " + key + " " + key.length() + "\n");
         // init vector already in hexadecimal - no need to convert
         String encryptedPass = "";
         // ensure key length to 32 chars hex (32 * 4 = 128)
         // IV length is already set to 32 chars hex by Entry object
-        if (key.length() < keylength)
-        {
-            while (key.length() < keylength){
+        if (key.length() < keylength) {
+            while (key.length() < keylength) {
                 key += pad; // pad with zeros
             }
-        }
-        else if (key.length() > keylength)
-        {
+        } else if (key.length() > keylength) {
             key = key.substring(0, keylength); // truncate
         }
         // parse password data into & out of AES 32 hex at a time
@@ -570,38 +527,28 @@ public class ClamshellUI extends javax.swing.JFrame {
         int r; // remainder of characters need to be padded to end of hex block on plaintext
         int d; // number of rounds to run AES (number of 32 character blocks)
         int length = plain.length();
-        
-        if (length < 32)
-        {
-           r = 32 - length;
-           d = 1; // only one round required
+
+        if (length < 32) {
+            r = 32 - length;
+            d = 1; // only one round required
+        } else {
+            r = length % 32; // r = how many we must pad to end 
+            d = (int) length / 32; // d = number of AES rounds required to cycle thru to encipher all plaintext 
         }
-        else
-        {
-           r = length % 32; // r = how many we must pad to end 
-           d = (int) length / 32; // d = number of AES rounds required to cycle thru to encipher all plaintext 
-        }
-        //System.out.println("len: "+plain.length()+"\n r: "+r+" d: "+d);
-        for (int i = length; i < length+r; ++i)
-        {
+        for (int i = length; i < length + r; ++i) {
             plain += pad;
-            //System.out.println(plain);
         }
-        System.out.println("AES Encryption. Padded:\nplaintext: " + plain + " " + plain.length() + "\nkey: " + key + " " + key.length() + "\n");
         // now we encipher the padded text
         AES aes = new AES(key);
-       
+
         for (int i = 0; i < d; ++i) // starts at round one
         {
-            encryptedPass += aes.encrypt(plain.substring(i*32, i*32+32));
+            encryptedPass += aes.encrypt(plain.substring(i * 32, i * 32 + 32));
         }
-        System.out.println("plaintext input as hex: "+plain);
-        //System.out.println("IV: " + iv);
-        System.out.println("encrypted output as hex: "+encryptedPass);
         aes = null;
         return encryptedPass;
     }
-    
+
     private byte[] hexStringToByteArray(String s) {
         byte[] b = new byte[s.length() / 2];
         for (int i = 0; i < b.length; i++) {
@@ -611,7 +558,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         return b;
     }
-    
+
     private String byteArrayToHexString(byte[] b) {
         String result = "";
         for (int i = 0; i < b.length; i++) {
@@ -620,17 +567,18 @@ public class ClamshellUI extends javax.swing.JFrame {
         return result;
     }
     // convert back to plaintext
-    public String byteToString(byte[] in){
+
+    public String byteToString(byte[] in) {
         String output = "";
-        for(int a = 0;a < in.length;a++)
-        {
-            output += (char)in[a];
+        for (int a = 0; a < in.length; a++) {
+            output += (char) in[a];
         }
         return output;
     }
     // convert plaintext string to hexadecimal (length is always x2 plaintext)
-    private String stringToHex(String s){
-        
+
+    private String stringToHex(String s) {
+
         StringBuilder buf = new StringBuilder(200);
         for (char ch : s.toCharArray()) {
             buf.append(String.format("%02x", (int) ch));
@@ -638,7 +586,6 @@ public class ClamshellUI extends javax.swing.JFrame {
         return buf.toString();
         //return byteArrayToHexString(s.getBytes());
     }
-    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addButton;
     private javax.swing.JButton deleteButton;

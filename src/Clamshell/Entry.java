@@ -8,7 +8,8 @@ package Clamshell;
  */
 public class Entry {
     
-    public String sName, uName, pw; //IV;
+    private String sName, uName, pw; //IV;
+    private int pad;
 
     public Entry(String s_name, String u_name, String pass) {
         sName = s_name;
@@ -48,6 +49,10 @@ public class Entry {
     public void setPassword(String pass) {
         pw = pass;
     }
+    
+    public void setPad(int newPad){
+        pad = newPad;
+    }
 
     public String getServiceName() {
         return sName;
@@ -59,5 +64,9 @@ public class Entry {
 
     public String getPassword() {
         return pw;
+    }
+    
+    public int getPad(){
+        return pad;
     }
 }
