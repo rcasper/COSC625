@@ -128,7 +128,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Password Manager Beta");
+        setTitle("Password Manager");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setIconImages(null);
         setMinimumSize(new java.awt.Dimension(554, 255));
@@ -339,6 +339,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         }
         // add new entry to passList
         Entry newentry = new Entry(sn, un, encryptAES(pss, masterPass)); //store password encrypted in system
+        try{
         int i = 0;
         if (passList.isEmpty()) {
             passList.add(newentry);
@@ -347,6 +348,9 @@ public class ClamshellUI extends javax.swing.JFrame {
                 i++;
             }
             passList.add(i, newentry);
+        }
+        }catch (IndexOutOfBoundsException e){
+            passList.add(newentry);
         }
         updateTextArea();
         updatePasswordFile();

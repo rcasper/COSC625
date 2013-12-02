@@ -78,7 +78,7 @@ public class AES {
                 outp += decryptedText[i][j];
             }
         }
-        System.out.println("^*^%&% decryption output as hex: "+outp);
+        //System.out.println("^*^%&% decryption output as hex: "+outp);
         return outp;
     }
     
