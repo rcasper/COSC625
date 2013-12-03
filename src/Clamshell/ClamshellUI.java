@@ -501,7 +501,7 @@ public class ClamshellUI extends javax.swing.JFrame {
         }// we are handed back 32 char hex string from AES 128 decryption
         // convert it back to plaintext
         aes = null;
-        return byteToString(hexStringToByteArray(decryptedPass));
+        return byteToString(hexStringToByteArray(decryptedPass)).trim();
     }
 
     /**
